@@ -1,17 +1,21 @@
 # Search ReSiLU2 and ReGELU2
 
 In our paper, we represent the approximate activation function as the follows:
-$$
+
+
+$`$
 \begin{equation}
 \begin{aligned}
-\widetilde{h}_{\bm{a},\bm{c}}(x) &= \mathop{\sum}_{i=1}^{2^k-1}a_i \mathop{\mathrm{max}}(x - c_i, 0), \\
-\text{s.t.} &\mathop{\sum}_{i=1}^{2^k-1} a_i = 1, \mathop{\sum}_{i=1}^{2^k-1} a_i c_i = 0,
+\widetilde{h}_{\boldsymbol{a},\boldsymbol{c}}(x) &= \mathop{\sum}_{i=1}^{2^k-1}a_i \mathop{\mathrm{max}}(x - c_i, 0), \\
+\text{s.t.} &\mathop{\sum}_{i=1}^{2^k-1} a_i = 1, \mathop{\sum}_{i=1}^{2^k-1} a_i c_i = 0.
 \end{aligned}
 \end{equation}
 \tag{*}
-$$
-In the practical implementation, we reparameterize the above piecewise linear function to a series of changing points, $\{P(x_1, 0), P(x_2, y_2), ..., P(x_{2^k-1}, x_{2^k-1})|x_1 \leq x_2 \leq ... \leq x_{2^k-1}\}$, with linear connecting lines between them.
-This reparameterizaton allows us to solve the optimzation problem, $\mathop{\mathrm{min}}_{\bm{a},\bm{c}} \int_{-\infty}^{\infty} (h(x) - \widetilde{h}_{\bm{a},\bm{c}}(x))^2 \mathrm{d}x$, without concerning the constraint conditions.
+$`$
+
+
+In the practical implementation, we reparameterize the above piecewise linear function to a series of changing points, $`\{P(x_1, 0), P(x_2, y_2), ..., P(x_{2^k-1}, x_{2^k-1})|x_1 \leq x_2 \leq ... \leq x_{2^k-1}\}`$, with linear connecting lines between them.
+This reparameterizaton allows us to solve the optimzation problem, $\min_{\boldsymbol{a},\boldsymbol{c}} \int_{-\infty}^{\infty} (h(x) - \widetilde{h}_{\boldsymbol{a},\boldsymbol{c}}(x))^2 \mathrm{d}x$, without concerning the constraint conditions.
 
 ## Usage
 We provide the script to search ReSiLU2 and ReGELU2.
@@ -22,7 +26,7 @@ python sa_search.py --output-dir results
 When the script is running, the results are going to be written into `sa_search_ReSiLU2.txt` and `sa_search_ReGELU2.txt` in the "output-dir".
 There will be two columns, "energe" and "var_list", in the txt files.
 The "energe" column represents the L2 distance between the target activation function and the approximate activation function.
-The "var_list" column represents the changing points $\{P(x_1, 0), P(x_2, y_2), P(x_3, x_3)\}$, which are aranged in the order $x_1, x_2, x_3, 0, y_2, x_3$.
+The "var_list" column represents the changing points $`\{P(x_1, 0), P(x_2, y_2), P(x_3, x_3)\}`$, which are aranged in the order $x_1, x_2, x_3, 0, y_2, x_3$.
 
 To get the form in (*), run the following commands:
 ```bash
@@ -30,7 +34,7 @@ python transform_results.py --results-path results/sa_search_ReSiLU2.txt --outpu
 
 python transform_results.py --results-path results/sa_search_ReGELU2.txt --output-path results/sa_best_ReGELU2.txt
 ```
-This script will choose the best results in "results-path", convert them into the form in (*) and output the optimal $\bm{a},\bm{c}$ into "output-path".
+This script will choose the best results in "results-path", convert them into the form in (*) and output the optimal $\boldsymbol{a},\boldsymbol{c}$ into "output-path".
 
 ## Visualization
 We can compare the searched approximate activation functions with the target functions by plotting their original functions and derivatives.
