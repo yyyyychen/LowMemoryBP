@@ -235,16 +235,16 @@ if __name__ == '__main__':
         init_x_list = sorted([random.uniform(silu_a[0], silu_b[0]) for _ in range(2**bits - 1)])
         init_y_list = [0,] + [random.normalvariate(0, init_sigma) for _ in range(2**bits - 3)] + [init_x_list[-1],]
         init_var_list = init_x_list + init_y_list
-        print(init_var_list)
         for restart in range(bits):
             optimizer = build_deviation_optimizer(silu, init_var_list, silu_a, silu_b, init_sigma=init_sigma, max_step=num_steps)
             for step in range(num_steps):
                 optimizer.step()
-                print(optimizer.energe, optimizer.var_list)
+                if (step + 1) % 10000 == 0:
+                    print(f"\rsa search ReSiLU{bits} | repeat: {run+1}/{repeats} | restart: {restart+1}/{bits} | iteration: {step+1}/{num_steps} | energe: {optimizer.energe}", end='', flush=True)
             init_var_list = optimizer.optimal_var_list
         with open(silu_results_path, 'a') as f:
             f.write(f"{optimizer.optimal_energe}, {str(optimizer.optimal_var_list)}\n")
-
+    print(f"\nResults are written to {silu_results_path}")
 
     gelu_results_path = os.path.join(output_dir, f"sa_search_ReGELU{bits}.txt")
     with open(gelu_results_path, 'w') as f:
@@ -257,7 +257,9 @@ if __name__ == '__main__':
             optimizer = build_deviation_optimizer(gelu, init_var_list, gelu_a, gelu_b, init_sigma=init_sigma, max_step=num_steps)
             for step in range(num_steps):
                 optimizer.step()
-                print(optimizer.energe, optimizer.var_list)
+                if (step + 1) % 10000 == 0:
+                    print(f"\rsa search ReGELU{bits} | repeat: {run+1}/{repeats} | restart: {restart+1}/{bits} | iteration: {step+1}/{num_steps} | energe: {optimizer.energe}", end='', flush=True)
             init_var_list = optimizer.optimal_var_list
         with open(gelu_results_path, 'a') as f:
             f.write(f"{optimizer.optimal_energe}, {str(optimizer.optimal_var_list)}\n")
+    print(f"\nResults are written to {gelu_results_path}")

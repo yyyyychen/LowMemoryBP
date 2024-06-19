@@ -109,7 +109,7 @@ if __name__ == "__main__":
     silu_results_path = os.path.join(output_dir, f"sgd_search_ReSiLU{kbit}.txt")
     with open(silu_results_path, 'w') as f:
         f.write(f"l2_dist, var_list\n")
-    for _ in range(repeats):
+    for run in range(repeats):
         resiluk = ApproxAct(bits=kbit, b_bounds=silu_truncate_bounds).to(device)
         optimizer = torch.optim.SGD(resiluk.parameters(), lr=0.01, momentum=0.9)
         # optimizer = torch.optim.AdamW(resiluk.parameters(), lr=0.01)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
             optimizer.step()
             scheduler.step()
             if (iter + 1) % 1000 == 0:
-                print(iter, loss.item())
+                print(f"\rsdg search ReSiLU{kbit} | repeat: {run+1}/{repeats} | iteration: {iter+1}/{num_steps} | L2 distance: {loss.item()}", end='', flush=True)
 
         with torch.no_grad():
             eval_samples = torch.rand((102400,), dtype=torch.double, device=device) * (silu_truncate_bounds[1] - silu_truncate_bounds[0]) + silu_truncate_bounds[0]
@@ -137,13 +137,13 @@ if __name__ == "__main__":
             y_list = resiluk.y_list[1:-1].cpu().tolist()
             with open(silu_results_path, 'a') as f:
                 f.write(f"{loss.item()}, {str(x_list + y_list)}\n")
-
+    print(f"\nResults are written to {silu_results_path}")
 
     gelu_truncate_bounds = get_gelu_truncate_bounds(1e-10)
     gelu_results_path = os.path.join(output_dir, f"sgd_search_ReGELU{kbit}.txt")
     with open(gelu_results_path, 'w') as f:
         f.write(f"l2_dist, var_list\n")
-    for _ in range(repeats):
+    for run in range(repeats):
         regeluk = ApproxAct(bits=kbit, b_bounds=gelu_truncate_bounds).to(device)
         optimizer = torch.optim.SGD(regeluk.parameters(), lr=0.01, momentum=0.9)
         # optimizer = torch.optim.AdamW(regeluk.parameters(), lr=0.01)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
             optimizer.step()
             scheduler.step()
             if (iter + 1) % 1000 == 0:
-                print(iter, loss.item())
+                print(f"\rsdg search ReGELU{kbit} | repeat: {run+1}/{repeats} | iteration: {iter+1}/{num_steps} | L2 distance: {loss.item()}", end='', flush=True)
 
         with torch.no_grad():
             eval_samples = torch.rand((102400,), dtype=torch.double, device=device) * (gelu_truncate_bounds[1] - gelu_truncate_bounds[0]) + gelu_truncate_bounds[0]
@@ -171,3 +171,4 @@ if __name__ == "__main__":
             y_list = regeluk.y_list[1:-1].cpu().tolist()
             with open(gelu_results_path, 'a') as f:
                 f.write(f"{loss.item()}, {str(x_list + y_list)}\n")
+    print(f"\nResults are written to {gelu_results_path}")
