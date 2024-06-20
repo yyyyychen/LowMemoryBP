@@ -34,3 +34,14 @@ template <typename T>
 void regelu2_bw_1d(int64_t N, void * out_grad_ptr, void * packed_flag_ptr, void * in_grad_ptr);
 
 torch::Tensor regelu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag);
+
+
+template <typename T>
+void resilu2_fw_1d(int64_t N, void * input_ptr, void * output_ptr, void * flag_ptr);
+
+std::vector<torch::Tensor> resilu2_fw(torch::Tensor& input);
+
+template <typename T>
+void resilu2_bw_1d(int64_t N, void * out_grad_ptr, void * packed_flag_ptr, void * in_grad_ptr);
+
+torch::Tensor resilu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag);

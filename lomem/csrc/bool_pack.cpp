@@ -37,4 +37,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
     m.def("uint8_to_bool", &uint8_to_bool, "unpack uint8 tensor into bool tensor");
     m.def("regelu2_fw", &regelu2_fw, "the forward pass of ReGELU2");
     m.def("regelu2_bw", &regelu2_bw, "the backward pass of ReGELU2");
+    m.def("resilu2_fw", &resilu2_fw, "the forward pass of ReSiLU2");
+    m.def("resilu2_bw", &resilu2_bw, "the backward pass of ReSiLU2");
 }

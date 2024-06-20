@@ -3,20 +3,20 @@ import torch
 from lomem import activation, packing
 
 
-ReGELU2_a = [-0.04922261145617846, 1.0979632065417297, -0.048740595085551286]
-ReGELU2_c = [-3.1858810036855245, -0.001178821281161997, 3.190832613414926]
+ReSiLU2_a = [-0.04060357190528599, 1.080925428529668, -0.040321856624382146]
+ReSiLU2_c = [-6.3050461001646445, -0.0008684942046214787, 6.325815242089708]
 
 
 @activation.apply_decorator
-class regelu2_test(torch.autograd.Function):
+class resilu2_test(torch.autograd.Function):
     """
     This python-based implementation is only for checking the correctness of the CUDA-based implementation.
-    For practical usage, please take lomem.activation.regelu2.
+    For practical usage, please take lomem.activation.resilu2.
     """
     @staticmethod
     @torch.cuda.amp.custom_fwd
     def forward(ctx, x: torch.Tensor):
-        out, packed_flag= activation._C.regelu2_fw(x)
+        out, packed_flag= activation._C.resilu2_fw(x)
         ctx.save_for_backward(packed_flag)
         return out
 
@@ -26,23 +26,23 @@ class regelu2_test(torch.autograd.Function):
     def backward(ctx, out_grad: torch.Tensor):
         packed_flag = ctx.saved_tensors[0]
         flag = ((packed_flag.unsqueeze(-1) >> torch.arange(0, 8, 2, dtype=torch.uint8, device=device).unsqueeze(0)) & 3).flatten()[:out_grad.numel()].reshape(out_grad.shape)
-        grad = out_grad * ((flag > 0) * ReGELU2_a[0] + (flag > 1) * ReGELU2_a[1] + (flag > 2) * ReGELU2_a[2])
+        grad = out_grad * ((flag > 0) * ReSiLU2_a[0] + (flag > 1) * ReSiLU2_a[1] + (flag > 2) * ReSiLU2_a[2])
         return grad
 
 
 @activation.apply_decorator
-class regelu2_ref(torch.autograd.Function):
+class resilu2_ref(torch.autograd.Function):
     """
     This python-based implementation is only for checking the correctness of the CUDA-based implementation.
-    For practical usage, please take lomem.activation.regelu2.
+    For practical usage, please take lomem.activation.resilu2.
     """
     @staticmethod
     @torch.cuda.amp.custom_fwd
     def forward(ctx, x: torch.Tensor):
         flag_1 = packing.pack_bool_to_uint8(
-            torch.logical_or(torch.logical_and(x > ReGELU2_c[0], x < ReGELU2_c[1]), x > ReGELU2_c[2])
+            torch.logical_or(torch.logical_and(x > ReSiLU2_c[0], x < ReSiLU2_c[1]), x > ReSiLU2_c[2])
         )
-        flag_2 = packing.pack_bool_to_uint8(x > ReGELU2_c[1])
+        flag_2 = packing.pack_bool_to_uint8(x > ReSiLU2_c[1])
         ctx.save_for_backward(flag_1, flag_2)
         return torch.nn.functional.gelu(x)
 
@@ -53,7 +53,7 @@ class regelu2_ref(torch.autograd.Function):
         shape = out_grad.shape
         flag = packing.unpack_uint8_to_bool(ctx.saved_tensors[0], shape).to(torch.int8)
         flag += packing.unpack_uint8_to_bool(ctx.saved_tensors[1], shape).to(torch.int8) * 2
-        grad = out_grad * ((flag > 0) * ReGELU2_a[0] + (flag > 1) * ReGELU2_a[1] + (flag > 2) * ReGELU2_a[2])
+        grad = out_grad * ((flag > 0) * ReSiLU2_a[0] + (flag > 1) * ReSiLU2_a[1] + (flag > 2) * ReSiLU2_a[2])
         return grad
 
 
@@ -67,8 +67,8 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
     y_2 = func2(x_2)
     y_2.norm().backward()
 
-    diff_fw = (y_1 - y_2).norm()
-    diff_bw = (x_1.grad - x_2.grad).norm()
+    diff_fw = (y_1 - y_2).norm() / x.numel()
+    diff_bw = (x_1.grad - x_2.grad).norm() / x.numel()
 
     torch.cuda.synchronize(device)
     start_time_1 = time.time()
@@ -107,64 +107,64 @@ if __name__ == '__main__':
     shape = (32, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (32, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (32, 197, 768)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (63, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (63, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (63, 197, 768)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (1, 197, 767)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (1, 197, 767)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     shape = (1, 197, 767)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
+    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
 
 
     if error < 1e-3:
