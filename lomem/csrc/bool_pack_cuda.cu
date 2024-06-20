@@ -8,7 +8,7 @@ constexpr static int inner_repeat {8};
 
 template <int vec_size = 1>
 __global__ void
-bool_pack_1d_kernel(const int64_t N, bool * input_ptr, u_int8_t * output_ptr)
+bool_pack_1d_kernel(const int64_t N, bool * input_ptr, uint8_t * output_ptr)
 {
     const int gid_blk = num_threads * inner_repeat * vec_size * blockIdx.x;
     using vec_t = Pack<bool, vec_size>;
@@ -35,7 +35,7 @@ bool_pack_1d_kernel(const int64_t N, bool * input_ptr, u_int8_t * output_ptr)
 void bool_pack_1d(int64_t N, void * input_ptr, void * output_ptr)
 {
     bool * input_ptr_ = reinterpret_cast<bool*>(input_ptr);
-    u_int8_t * output_ptr_ = reinterpret_cast<u_int8_t*>(output_ptr);
+    uint8_t * output_ptr_ = reinterpret_cast<uint8_t*>(output_ptr);
     dim3 blockDim{num_threads};
     if (check_align(input_ptr_, sizeof(bool) * 8, N)) {
         constexpr int blocksize = num_threads * inner_repeat * 8;
@@ -58,7 +58,7 @@ void bool_pack_1d(int64_t N, void * input_ptr, void * output_ptr)
 
 
 __global__ void
-bool_unpack_1d_kernel(const int64_t N, u_int8_t * input_ptr, bool * output_ptr)
+bool_unpack_1d_kernel(const int64_t N, uint8_t * input_ptr, bool * output_ptr)
 {
     const int gid_blk = num_threads * inner_repeat * blockIdx.x;
     using vec_t = Pack<bool, 8>;
@@ -86,5 +86,5 @@ void bool_unpack_1d(int64_t N, void * input_ptr, void * output_ptr)
     constexpr int blocksize = num_threads * inner_repeat;
     dim3 gridDim{(N + blocksize - 1) / blocksize};
     bool_unpack_1d_kernel<<<gridDim, blockDim>>>
-        (N, reinterpret_cast<u_int8_t*>(input_ptr), reinterpret_cast<bool*>(output_ptr));
+        (N, reinterpret_cast<uint8_t*>(input_ptr), reinterpret_cast<bool*>(output_ptr));
 }

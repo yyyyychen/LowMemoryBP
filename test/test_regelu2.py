@@ -94,6 +94,7 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
     print(f"forward diff: {diff_fw}")
     print(f"backward diff: {diff_bw}")
     print()
+    return diff_fw + diff_bw
 
 
 
@@ -101,42 +102,63 @@ if __name__ == '__main__':
     device = 'cuda:1'
     num_repeat = 100
 
-    shape = (64, 197, 768)
+    shape = (32, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
     test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
     test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
 
 
-    shape = (64, 197, 768)
+    shape = (32, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
     test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
     test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
 
 
-    shape = (64, 197, 768)
+    shape = (32, 197, 768)
     dtype = torch.bfloat16
     print("-------------------------------------------")
     test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
     test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
 
 
-    shape = (13, 13, 117)
+    shape = (63, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
     test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
     test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
 
 
-    shape = (13, 13, 117)
+    shape = (63, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
     test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
     test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
 
 
-    shape = (13, 13, 117)
+    shape = (63, 197, 768)
+    dtype = torch.bfloat16
+    print("-------------------------------------------")
+    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
+    test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
+
+
+    shape = (1, 197, 767)
+    dtype = torch.float32
+    print("-------------------------------------------")
+    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
+    test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
+
+
+    shape = (1, 197, 767)
+    dtype = torch.float16
+    print("-------------------------------------------")
+    test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
+    test_func("lomem regelu2", activation.regelu2, "py-ref regelu2", regelu2_ref, shape, dtype, device, num_repeat)
+
+
+    shape = (1, 197, 767)
     dtype = torch.bfloat16
     print("-------------------------------------------")
     test_func("lomem regelu2", activation.regelu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat)
