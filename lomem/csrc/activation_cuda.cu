@@ -20,8 +20,8 @@ template <typename T>
 __inline__ __device__ void regelu2_fw(T x, T& y, uint8_t& flag)
 {
     float x_ {x};
-    y = (1 + ::erf(x_ * inv_sqrt2)) * x_ * 0.5;
-    flag += (x_ > ReGELU2_c[0]) + (x_ > ReGELU2_c[1]) + (x_ > ReGELU2_c[2]);
+    y = (1.f + ::erf(x_ * inv_sqrt2)) * x_ * 0.5f;
+    flag = (x_ > ReGELU2_c[0]) + (x_ > ReGELU2_c[1]) + (x_ > ReGELU2_c[2]);
 }
 
 
@@ -41,7 +41,7 @@ __inline__ __device__ void resilu2_fw(T x, T& y, uint8_t& flag)
 {
     float x_ {x};
     y = x_ / (1 + ::exp(-x_));
-    flag += (x_ > ReSiLU2_c[0]) + (x_ > ReSiLU2_c[1]) + (x_ > ReSiLU2_c[2]);
+    flag = (x_ > ReSiLU2_c[0]) + (x_ > ReSiLU2_c[1]) + (x_ > ReSiLU2_c[2]);
 }
 
 
@@ -55,34 +55,42 @@ __inline__ __device__ void resilu2_bw(T out_grad, uint8_t flag, T& in_grad)
 }
 
 
-template <typename T, int vec_size>
+template <typename T, int grad_vec_size>
 __global__ void
 regelu2_fw_1d_kernel
 (int64_t N, T * input_ptr, T * output_ptr, u_int8_t * flag_ptr)
 {
-    static_assert(vec_size <= 4, "");
+    // static_assert(grad_vec_size <= 4, "");
 
-    const int gid_blk = num_threads * inner_repeat * vec_size * blockIdx.x;
-    using vec_t = Pack<T, vec_size>;
+    const int gid_blk = num_threads * inner_repeat * grad_vec_size * blockIdx.x;
+    using vec_t = Pack<T, grad_vec_size>;
 
-    uint8_t flag{0};
-    vec_t input_vec{};
-    vec_t output_vec{};
-    int64_t gid{gid_blk + threadIdx.x * vec_size};
+    uint8_t flag;
+    uint8_t packed_flag;
+    vec_t input_vec [2]; // double buffer
+    vec_t output_vec;
+    int64_t gid{gid_blk + threadIdx.x * grad_vec_size};
+    input_vec[0] = *reinterpret_cast<vec_t*>(input_ptr + gid);
+    int write_buffer = 1;
     #pragma unroll
-    for (int r = 0; r < inner_repeat; ++r, gid += num_threads * vec_size) {
+    for (int r = 0; r < inner_repeat; ++r) {
+        int gid_next = gid + num_threads * grad_vec_size;
+        int read_buffer = write_buffer ^ 1;
         if (gid < N) {
-            input_vec = *reinterpret_cast<vec_t*>(input_ptr + gid);
-            flag = 0;
+            if (gid_next < N)
+                input_vec[write_buffer] = *reinterpret_cast<vec_t*>(input_ptr + gid_next);
+            packed_flag = 0;
             #pragma unroll
-            for (int k = 0; k < vec_size; ++k) {
-                flag <<= 2;
-                regelu2_fw(input_vec.elem[k], output_vec.elem[k], flag);
+            for (int k = 0; k < grad_vec_size; ++k) {
+                regelu2_fw(input_vec[read_buffer].elem[k], output_vec.elem[k], flag);
+                packed_flag |= (flag <<= (2 * (k & 3)));
             }
-            packflagWarpReduce<vec_size * 2>(flag);
+            packflagWarpReduce<grad_vec_size * 2>(packed_flag);
             *reinterpret_cast<vec_t*>(output_ptr + gid) = output_vec;
-            if (!(gid & 3)) *(flag_ptr + gid / 4) = flag;
+            if (!(gid & 3)) *(flag_ptr + gid / 4) = packed_flag;
         }
+        gid = gid_next;
+        write_buffer ^= 1;
     }
 }
 
@@ -110,9 +118,10 @@ regelu2_bw_1d_kernel
             flag_vec = *reinterpret_cast<flag_vec_t*>(packed_flag_ptr + gid / 4);
             #pragma unroll
             for (int k = 0; k < grad_vec_size; ++k) {
+                int gid_k = gid + k;
                 regelu2_bw(
                     out_grad_vec.elem[k],
-                    (flag_vec.elem[k/4] >> ((k & 3) * 2)) & 3,
+                    (flag_vec.elem[k/4] >> ((gid_k & 3) * 2)) & 3,
                     in_grad_vec.elem[k]
                 );
 
