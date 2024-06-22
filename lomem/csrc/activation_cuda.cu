@@ -302,7 +302,7 @@ resilu2_fw_1d_kernel
             #pragma unroll
             for (int k = 0; k < vec_size; ++k) {
                 resilu2_fw(input_vec[read_buffer].elem[k], output_vec.elem[k], flag);
-                  |= (flag <<= (2 * (k & 3)));
+                packed_flag |= (flag <<= (2 * (k & 3)));
             }
             packflagWarpReduce<vec_size * 2>(packed_flag);
             *reinterpret_cast<vec_t*>(output_ptr + gid) = output_vec;

@@ -7,31 +7,7 @@ ReGELU2_a = [-0.04922261145617846, 1.0979632065417297, -0.048740595085551286]
 ReGELU2_c = [-3.1858810036855245, -0.001178821281161997, 3.190832613414926]
 
 
-@activation.apply_decorator
-class regelu2_test(torch.autograd.Function):
-    """
-    This python-based implementation is only for checking the correctness of the CUDA-based implementation.
-    For practical usage, please take lomem.activation.regelu2.
-    """
-    @staticmethod
-    @torch.cuda.amp.custom_fwd
-    def forward(ctx, x: torch.Tensor):
-        out, packed_flag= activation._C.regelu2_fw(x)
-        ctx.save_for_backward(packed_flag)
-        return out
-
-    @staticmethod
-    @torch.cuda.amp.custom_bwd
-    @torch.autograd.function.once_differentiable
-    def backward(ctx, out_grad: torch.Tensor):
-        packed_flag = ctx.saved_tensors[0]
-        flag = ((packed_flag.unsqueeze(-1) >> torch.arange(0, 8, 2, dtype=torch.uint8, device=device).unsqueeze(0)) & 3).flatten()[:out_grad.numel()].reshape(out_grad.shape)
-        grad = out_grad * ((flag > 0) * ReGELU2_a[0] + (flag > 1) * ReGELU2_a[1] + (flag > 2) * ReGELU2_a[2])
-        return grad
-
-
-@activation.apply_decorator
-class regelu2_ref(torch.autograd.Function):
+class ReGELU2RefFunction(torch.autograd.Function):
     """
     This python-based implementation is only for checking the correctness of the CUDA-based implementation.
     For practical usage, please take lomem.activation.regelu2.
@@ -55,6 +31,11 @@ class regelu2_ref(torch.autograd.Function):
         flag += packing.unpack_uint8_to_bool(ctx.saved_tensors[1], shape).to(torch.int8) * 2
         grad = out_grad * ((flag > 0) * ReGELU2_a[0] + (flag > 1) * ReGELU2_a[1] + (flag > 2) * ReGELU2_a[2])
         return grad
+
+
+def regelu2_ref(input: torch.Tensor) -> torch.Tensor:
+    output = ReGELU2RefFunction.apply(input)
+    return output
 
 
 def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, num_repeat=100, print_msg=False):

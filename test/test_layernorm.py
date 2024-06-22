@@ -6,7 +6,7 @@ from lomem import normalization
 if __name__ == "__main__":
     device = "cuda:0"
     dtype = torch.float32
-    shape = (31, 123, 767)
+    shape = (31, 123, 768)
     eps = 1e-8
 
     x = (torch.rand(shape, dtype=dtype, device=device) - 0.5) * 2

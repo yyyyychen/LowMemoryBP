@@ -7,31 +7,7 @@ ReSiLU2_a = [-0.04060357190528599, 1.080925428529668, -0.040321856624382146]
 ReSiLU2_c = [-6.3050461001646445, -0.0008684942046214787, 6.325815242089708]
 
 
-@activation.apply_decorator
-class resilu2_test(torch.autograd.Function):
-    """
-    This python-based implementation is only for checking the correctness of the CUDA-based implementation.
-    For practical usage, please take lomem.activation.resilu2.
-    """
-    @staticmethod
-    @torch.cuda.amp.custom_fwd
-    def forward(ctx, x: torch.Tensor):
-        out, packed_flag= activation._C.resilu2_fw(x)
-        ctx.save_for_backward(packed_flag)
-        return out
-
-    @staticmethod
-    @torch.cuda.amp.custom_bwd
-    @torch.autograd.function.once_differentiable
-    def backward(ctx, out_grad: torch.Tensor):
-        packed_flag = ctx.saved_tensors[0]
-        flag = ((packed_flag.unsqueeze(-1) >> torch.arange(0, 8, 2, dtype=torch.uint8, device=device).unsqueeze(0)) & 3).flatten()[:out_grad.numel()].reshape(out_grad.shape)
-        grad = out_grad * ((flag > 0) * ReSiLU2_a[0] + (flag > 1) * ReSiLU2_a[1] + (flag > 2) * ReSiLU2_a[2])
-        return grad
-
-
-@activation.apply_decorator
-class resilu2_ref(torch.autograd.Function):
+class ReSiLU2RefFunction(torch.autograd.Function):
     """
     This python-based implementation is only for checking the correctness of the CUDA-based implementation.
     For practical usage, please take lomem.activation.resilu2.
@@ -55,6 +31,11 @@ class resilu2_ref(torch.autograd.Function):
         flag += packing.unpack_uint8_to_bool(ctx.saved_tensors[1], shape).to(torch.int8) * 2
         grad = out_grad * ((flag > 0) * ReSiLU2_a[0] + (flag > 1) * ReSiLU2_a[1] + (flag > 2) * ReSiLU2_a[2])
         return grad
+
+
+def resilu2_ref(input: torch.Tensor) -> torch.Tensor:
+    output = ReSiLU2RefFunction.apply(input)
+    return output
 
 
 def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, num_repeat=100, print_msg=False):
