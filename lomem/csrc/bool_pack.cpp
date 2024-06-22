@@ -39,4 +39,5 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
     m.def("regelu2_bw", &regelu2_bw, "the backward pass of ReGELU2");
     m.def("resilu2_fw", &resilu2_fw, "the forward pass of ReSiLU2");
     m.def("resilu2_bw", &resilu2_bw, "the backward pass of ReSiLU2");
+    m.def("layer_norm_fw", &layer_norm_fw, "the forward pass of LayerNorm");
 }

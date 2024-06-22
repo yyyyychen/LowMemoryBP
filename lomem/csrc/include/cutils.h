@@ -45,3 +45,9 @@ template <typename T>
 void resilu2_bw_1d(int64_t N, void * out_grad_ptr, void * packed_flag_ptr, void * in_grad_ptr);
 
 torch::Tensor resilu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag);
+
+
+template <typename T>
+void layer_norm_fw_2d(int64_t M, int64_t N, float eps, void * input_ptr, void * output_ptr, void * rstd);
+
+std::vector<torch::Tensor> layer_norm_fw(torch::Tensor& input, std::vector<int64_t>& normalized_shape, const float& eps);

@@ -44,7 +44,7 @@ class resilu2_ref(torch.autograd.Function):
         )
         flag_2 = packing.pack_bool_to_uint8(x > ReSiLU2_c[1])
         ctx.save_for_backward(flag_1, flag_2)
-        return torch.nn.functional.gelu(x)
+        return torch.nn.functional.silu(x)
 
     @staticmethod
     @torch.cuda.amp.custom_bwd
@@ -58,23 +58,23 @@ class resilu2_ref(torch.autograd.Function):
 
 
 def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, num_repeat=100, print_msg=False):
-    x = (torch.rand(input_size, dtype=dtype, device=device) - 0.5) * 20
+    x = (torch.rand(input_size, dtype=dtype, device=device) - 0.5) * 2
     x_1 = x.clone().requires_grad_()
     x_2 = x.clone().requires_grad_()
 
     y_1 = func1(x_1)
-    y_1.norm().backward()
+    y_1.sum().backward()
     y_2 = func2(x_2)
-    y_2.norm().backward()
+    y_2.sum().backward()
 
-    diff_fw = (y_1 - y_2).norm() / x.numel()
-    diff_bw = (x_1.grad - x_2.grad).norm() / x.numel()
+    diff_fw = (y_1 - y_2).abs().mean()
+    diff_bw = (x_1.grad - x_2.grad).abs().mean()
 
     torch.cuda.synchronize(device)
     start_time_1 = time.time()
     for _ in range(num_repeat):
         y_1 = func1(x_1)
-        y_1.norm().backward()
+        y_1.sum().backward()
     torch.cuda.synchronize(device)
     end_time_1 = time.time()
     mean_time_1 = (end_time_1 - start_time_1) / num_repeat
@@ -83,7 +83,7 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
     start_time_2 = time.time()
     for _ in range(num_repeat):
         y_2 = func2(x_2)
-        y_2.norm().backward()
+        y_2.sum().backward()
     torch.cuda.synchronize(device)
     end_time_2 = time.time()
     mean_time_2 = (end_time_2 - start_time_2) / num_repeat
@@ -102,72 +102,82 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
 if __name__ == '__main__':
     device = 'cuda:1'
     num_repeat = 100
-    error = 0
+
+    error_list = []
 
     shape = (32, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (32, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (32, 197, 768)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (63, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (63, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (63, 197, 768)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (1, 197, 767)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (1, 197, 767)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
     shape = (1, 197, 767)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch gelu", torch.nn.functional.gelu, shape, dtype, device, num_repeat, True)
-    error += test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
 
 
-    if error < 1e-3:
-        print("pass!")
+    if max(error_list) < 1e-7:
+        print(f"pass! max error: {max(error_list)}")
     else:
-        print(f"error: {error}")
+        print(f"max error: {error}")

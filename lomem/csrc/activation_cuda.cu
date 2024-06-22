@@ -40,7 +40,7 @@ template <typename T>
 __inline__ __device__ void resilu2_fw(T x, T& y, uint8_t& flag)
 {
     float x_ {x};
-    y = x_ / (1.f + ::exp(-x_));
+    y = x_ / (1.f + ::expf(-x_));
     flag = (x_ > ReSiLU2_c[0]) + (x_ > ReSiLU2_c[1]) + (x_ > ReSiLU2_c[2]);
 }
 
@@ -58,7 +58,7 @@ __inline__ __device__ void resilu2_bw(T out_grad, uint8_t flag, T& in_grad)
 template <typename T, int vec_size>
 __global__ void
 regelu2_fw_1d_kernel
-(int64_t N, T * input_ptr, T * output_ptr, u_int8_t * flag_ptr)
+(int64_t N, T * __restrict__ input_ptr, T * __restrict__ output_ptr, u_int8_t * __restrict__ flag_ptr)
 {
     static_assert(vec_size <= 4, "vector size must be less than 4");
 
@@ -98,7 +98,7 @@ regelu2_fw_1d_kernel
 template <typename T, int grad_vec_size, int flag_vec_size>
 __global__ void
 regelu2_bw_1d_kernel
-(int64_t N, T * out_grad_ptr, uint8_t * packed_flag_ptr, T * in_grad_ptr)
+(int64_t N, T * __restrict__ out_grad_ptr, uint8_t * __restrict__ packed_flag_ptr, T * __restrict__ in_grad_ptr)
 {
     const int gid_blk = num_threads * inner_repeat * grad_vec_size * blockIdx.x;
     using grad_vec_t = Pack<T, grad_vec_size>;
@@ -140,83 +140,83 @@ regelu2_bw_1d_kernel
 
 
 template <typename T>
-void regelu2_fw_1d_(int64_t N, void * input_ptr, void * output_ptr, void * flag_ptr)
+void regelu2_fw_1d_(int64_t N, void * input_ptr_, void * output_ptr_, void * flag_ptr_)
 {
-    T * input_ptr_ = reinterpret_cast<T*>(input_ptr);
-    T * output_ptr_ = reinterpret_cast<T*>(output_ptr);
-    u_int8_t * flag_ptr_ = reinterpret_cast<u_int8_t*>(flag_ptr);
+    T * input_ptr = reinterpret_cast<T*>(input_ptr_);
+    T * output_ptr = reinterpret_cast<T*>(output_ptr_);
+    u_int8_t * flag_ptr = reinterpret_cast<u_int8_t*>(flag_ptr_);
 
     dim3 blockDim(num_threads);
-    if ((16 / sizeof(T) <= 4) && check_align(input_ptr_, 16, N) && check_align(output_ptr_, 16, N)) {
+    if ((16 / sizeof(T) <= 4) && check_align(input_ptr, 16, N) && check_align(output_ptr, 16, N)) {
         constexpr int vec_size {16 / sizeof(T)};
         if constexpr (vec_size <= 4) {
             constexpr int blocksize = num_threads * inner_repeat * vec_size;
             dim3 gridDim{(N + blocksize - 1) / blocksize};
             regelu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-                (N, input_ptr_, output_ptr_, flag_ptr_);
+                (N, input_ptr, output_ptr, flag_ptr);
         }
-    } else if ((8 / sizeof(T) <= 4) && check_align(input_ptr_, 8, N) && check_align(output_ptr_, 8, N)) {
+    } else if ((8 / sizeof(T) <= 4) && check_align(input_ptr, 8, N) && check_align(output_ptr, 8, N)) {
         constexpr int vec_size {8 / sizeof(T)};
         if constexpr (vec_size <= 4) {
             const int vec_size {8 / sizeof(T)};
             constexpr int blocksize = num_threads * inner_repeat * vec_size;
             dim3 gridDim{(N + blocksize - 1) / blocksize};
             regelu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-                (N, input_ptr_, output_ptr_, flag_ptr_);
+                (N, input_ptr, output_ptr, flag_ptr);
         }
-    } else if ((4 / sizeof(T) <= 4) && check_align(input_ptr_, 4, N) && check_align(output_ptr_, 4, N)) {
+    } else if ((4 / sizeof(T) <= 4) && check_align(input_ptr, 4, N) && check_align(output_ptr, 4, N)) {
         constexpr int vec_size {4 / sizeof(T)};
         if constexpr (vec_size <= 4) {
             const int vec_size {4 / sizeof(T)};
             constexpr int blocksize = num_threads * inner_repeat * vec_size;
             dim3 gridDim{(N + blocksize - 1) / blocksize};
             regelu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-                (N, input_ptr_, output_ptr_, flag_ptr_);
+                (N, input_ptr, output_ptr, flag_ptr);
         }
     } else{
-        const int vec_size {1};
+        constexpr int vec_size {1};
         constexpr int blocksize = num_threads * inner_repeat * vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         regelu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (N, input_ptr_, output_ptr_, flag_ptr_);
+            (N, input_ptr, output_ptr, flag_ptr);
     }
 }
 
 
 template <typename T>
-void regelu2_bw_1d_(int64_t N, void * out_grad_ptr, void * packed_flag_ptr, void * in_grad_ptr)
+void regelu2_bw_1d_(int64_t N, void * out_grad_ptr_, void * packed_flag_ptr_, void * in_grad_ptr_)
 {
-    T * out_grad_ptr_ = reinterpret_cast<T*>(out_grad_ptr);
-    u_int8_t * packed_flag_ptr_ = reinterpret_cast<u_int8_t*>(packed_flag_ptr);
-    T * in_grad_ptr_ = reinterpret_cast<T*>(in_grad_ptr);
+    T * out_grad_ptr = reinterpret_cast<T*>(out_grad_ptr_);
+    u_int8_t * packed_flag_ptr = reinterpret_cast<u_int8_t*>(packed_flag_ptr_);
+    T * in_grad_ptr = reinterpret_cast<T*>(in_grad_ptr_);
 
     dim3 blockDim(num_threads);
-    if (check_align(out_grad_ptr_, 16, N) && check_align(in_grad_ptr_, 16, N)) {
+    if (check_align(out_grad_ptr, 16, N) && check_align(in_grad_ptr, 16, N)) {
         constexpr int grad_vec_size {16 / sizeof(T)};
         constexpr int flag_vec_size = (grad_vec_size + 4 - 1) / 4; 
 
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         regelu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
 
-    } else if (check_align(out_grad_ptr_, 8, N) && check_align(in_grad_ptr_, 8, N)) {
+    } else if (check_align(out_grad_ptr, 8, N) && check_align(in_grad_ptr, 8, N)) {
         constexpr int grad_vec_size {8 / sizeof(T)};
         constexpr int flag_vec_size = (grad_vec_size + 4 - 1) / 4; 
 
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         regelu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
 
-    } else if (check_align(out_grad_ptr_, 4, N) && check_align(in_grad_ptr_, 4, N)) {
+    } else if (check_align(out_grad_ptr, 4, N) && check_align(in_grad_ptr, 4, N)) {
         constexpr int grad_vec_size {4 / sizeof(T)};
         constexpr int flag_vec_size = (grad_vec_size + 4 - 1) / 4; 
 
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         regelu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
 
     } else{
         constexpr int grad_vec_size {1};
@@ -225,7 +225,7 @@ void regelu2_bw_1d_(int64_t N, void * out_grad_ptr, void * packed_flag_ptr, void
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         regelu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
     }
 }
 
@@ -277,7 +277,7 @@ void regelu2_bw_1d<nv_bfloat16>(int64_t N, void * out_grad_ptr, void * packed_fl
 template <typename T, int vec_size>
 __global__ void
 resilu2_fw_1d_kernel
-(int64_t N, T * input_ptr, T * output_ptr, u_int8_t * flag_ptr)
+(int64_t N, T * __restrict__ input_ptr, T * __restrict__ output_ptr, u_int8_t * __restrict__ flag_ptr)
 {
     static_assert(vec_size <= 4, "vector size must be less than 4");
 
@@ -302,7 +302,7 @@ resilu2_fw_1d_kernel
             #pragma unroll
             for (int k = 0; k < vec_size; ++k) {
                 resilu2_fw(input_vec[read_buffer].elem[k], output_vec.elem[k], flag);
-                packed_flag |= (flag <<= (2 * (k & 3)));
+                  |= (flag <<= (2 * (k & 3)));
             }
             packflagWarpReduce<vec_size * 2>(packed_flag);
             *reinterpret_cast<vec_t*>(output_ptr + gid) = output_vec;
@@ -317,7 +317,7 @@ resilu2_fw_1d_kernel
 template <typename T, int grad_vec_size, int flag_vec_size>
 __global__ void
 resilu2_bw_1d_kernel
-(int64_t N, T * out_grad_ptr, uint8_t * packed_flag_ptr, T * in_grad_ptr)
+(int64_t N, T * __restrict__ out_grad_ptr, uint8_t * __restrict__ packed_flag_ptr, T * __restrict__ in_grad_ptr)
 {
     const int gid_blk = num_threads * inner_repeat * grad_vec_size * blockIdx.x;
     using grad_vec_t = Pack<T, grad_vec_size>;
@@ -359,83 +359,83 @@ resilu2_bw_1d_kernel
 
 
 template <typename T>
-void resilu2_fw_1d_(int64_t N, void * input_ptr, void * output_ptr, void * flag_ptr)
+void resilu2_fw_1d_(int64_t N, void * input_ptr_, void * output_ptr_, void * flag_ptr_)
 {
-    T * input_ptr_ = reinterpret_cast<T*>(input_ptr);
-    T * output_ptr_ = reinterpret_cast<T*>(output_ptr);
-    u_int8_t * flag_ptr_ = reinterpret_cast<u_int8_t*>(flag_ptr);
+    T * input_ptr = reinterpret_cast<T*>(input_ptr_);
+    T * output_ptr = reinterpret_cast<T*>(output_ptr_);
+    u_int8_t * flag_ptr = reinterpret_cast<u_int8_t*>(flag_ptr_);
 
     dim3 blockDim(num_threads);
-    if ((16 / sizeof(T) <= 4) && check_align(input_ptr_, 16, N) && check_align(output_ptr_, 16, N)) {
+    if ((16 / sizeof(T) <= 4) && check_align(input_ptr, 16, N) && check_align(output_ptr, 16, N)) {
         constexpr int vec_size {16 / sizeof(T)};
         if constexpr (vec_size <= 4) {
             constexpr int blocksize = num_threads * inner_repeat * vec_size;
             dim3 gridDim{(N + blocksize - 1) / blocksize};
             resilu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-                (N, input_ptr_, output_ptr_, flag_ptr_);
+                (N, input_ptr, output_ptr, flag_ptr);
         }
-    } else if ((8 / sizeof(T) <= 4) && check_align(input_ptr_, 8, N) && check_align(output_ptr_, 8, N)) {
+    } else if ((8 / sizeof(T) <= 4) && check_align(input_ptr, 8, N) && check_align(output_ptr, 8, N)) {
         constexpr int vec_size {8 / sizeof(T)};
         if constexpr (vec_size <= 4) {
             const int vec_size {8 / sizeof(T)};
             constexpr int blocksize = num_threads * inner_repeat * vec_size;
             dim3 gridDim{(N + blocksize - 1) / blocksize};
             resilu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-                (N, input_ptr_, output_ptr_, flag_ptr_);
+                (N, input_ptr, output_ptr, flag_ptr);
         }
-    } else if ((4 / sizeof(T) <= 4) && check_align(input_ptr_, 4, N) && check_align(output_ptr_, 4, N)) {
+    } else if ((4 / sizeof(T) <= 4) && check_align(input_ptr, 4, N) && check_align(output_ptr, 4, N)) {
         constexpr int vec_size {4 / sizeof(T)};
         if constexpr (vec_size <= 4) {
             const int vec_size {4 / sizeof(T)};
             constexpr int blocksize = num_threads * inner_repeat * vec_size;
             dim3 gridDim{(N + blocksize - 1) / blocksize};
             resilu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-                (N, input_ptr_, output_ptr_, flag_ptr_);
+                (N, input_ptr, output_ptr, flag_ptr);
         }
-    } else{
-        const int vec_size {1};
+    } else {
+        constexpr int vec_size {1};
         constexpr int blocksize = num_threads * inner_repeat * vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         resilu2_fw_1d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (N, input_ptr_, output_ptr_, flag_ptr_);
+            (N, input_ptr, output_ptr, flag_ptr);
     }
 }
 
 
 template <typename T>
-void resilu2_bw_1d_(int64_t N, void * out_grad_ptr, void * packed_flag_ptr, void * in_grad_ptr)
+void resilu2_bw_1d_(int64_t N, void * out_grad_ptr_, void * packed_flag_ptr_, void * in_grad_ptr_)
 {
-    T * out_grad_ptr_ = reinterpret_cast<T*>(out_grad_ptr);
-    u_int8_t * packed_flag_ptr_ = reinterpret_cast<u_int8_t*>(packed_flag_ptr);
-    T * in_grad_ptr_ = reinterpret_cast<T*>(in_grad_ptr);
+    T * out_grad_ptr = reinterpret_cast<T*>(out_grad_ptr_);
+    u_int8_t * packed_flag_ptr = reinterpret_cast<u_int8_t*>(packed_flag_ptr_);
+    T * in_grad_ptr = reinterpret_cast<T*>(in_grad_ptr_);
 
     dim3 blockDim(num_threads);
-    if (check_align(out_grad_ptr_, 16, N) && check_align(in_grad_ptr_, 16, N)) {
+    if (check_align(out_grad_ptr, 16, N) && check_align(in_grad_ptr, 16, N)) {
         constexpr int grad_vec_size {16 / sizeof(T)};
         constexpr int flag_vec_size = (grad_vec_size + 4 - 1) / 4; 
 
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         resilu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
 
-    } else if (check_align(out_grad_ptr_, 8, N) && check_align(in_grad_ptr_, 8, N)) {
+    } else if (check_align(out_grad_ptr, 8, N) && check_align(in_grad_ptr, 8, N)) {
         constexpr int grad_vec_size {8 / sizeof(T)};
         constexpr int flag_vec_size = (grad_vec_size + 4 - 1) / 4; 
 
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         resilu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
 
-    } else if (check_align(out_grad_ptr_, 4, N) && check_align(in_grad_ptr_, 4, N)) {
+    } else if (check_align(out_grad_ptr, 4, N) && check_align(in_grad_ptr, 4, N)) {
         constexpr int grad_vec_size {4 / sizeof(T)};
         constexpr int flag_vec_size = (grad_vec_size + 4 - 1) / 4; 
 
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         resilu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
 
     } else{
         constexpr int grad_vec_size {1};
@@ -444,7 +444,7 @@ void resilu2_bw_1d_(int64_t N, void * out_grad_ptr, void * packed_flag_ptr, void
         constexpr int blocksize = num_threads * inner_repeat * grad_vec_size;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
         resilu2_bw_1d_kernel<T, grad_vec_size, flag_vec_size><<<gridDim, blockDim>>>
-            (N, out_grad_ptr_, packed_flag_ptr_, in_grad_ptr_);
+            (N, out_grad_ptr, packed_flag_ptr, in_grad_ptr);
     }
 }
 
