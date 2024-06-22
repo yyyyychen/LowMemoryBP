@@ -17,19 +17,17 @@ __device__ static constexpr float inv_sqrt2 {0.7071067811865475};
 
 // regelu2
 template <typename T>
-__inline__ __device__ void regelu2_fw(T x, T& y, uint8_t& flag)
+__inline__ __device__ void regelu2_fw(float x, T& y, uint8_t& flag)
 {
-    float x_ {x};
-    y = (1.f + ::erf(x_ * inv_sqrt2)) * x_ * 0.5f;
-    flag = (x_ > ReGELU2_c[0]) + (x_ > ReGELU2_c[1]) + (x_ > ReGELU2_c[2]);
+    y = (1.f + ::erf(x * inv_sqrt2)) * x * 0.5f;
+    flag = (x > ReGELU2_c[0]) + (x > ReGELU2_c[1]) + (x > ReGELU2_c[2]);
 }
 
 
 template <typename T>
-__inline__ __device__ void regelu2_bw(T out_grad, uint8_t flag, T& in_grad)
+__inline__ __device__ void regelu2_bw(float out_grad, uint8_t flag, T& in_grad)
 {
-    float out_grad_ {out_grad};
-    in_grad = out_grad_ * (
+    in_grad = out_grad * (
         (flag > 0) * ReGELU2_a[0] + (flag > 1) * ReGELU2_a[1] + (flag > 2) * ReGELU2_a[2]
     );
 }
@@ -37,19 +35,17 @@ __inline__ __device__ void regelu2_bw(T out_grad, uint8_t flag, T& in_grad)
 
 // resilu2
 template <typename T>
-__inline__ __device__ void resilu2_fw(T x, T& y, uint8_t& flag)
+__inline__ __device__ void resilu2_fw(float x, T& y, uint8_t& flag)
 {
-    float x_ {x};
-    y = x_ / (1.f + ::expf(-x_));
-    flag = (x_ > ReSiLU2_c[0]) + (x_ > ReSiLU2_c[1]) + (x_ > ReSiLU2_c[2]);
+    y = x / (1.f + ::expf(-x));
+    flag = (x > ReSiLU2_c[0]) + (x > ReSiLU2_c[1]) + (x > ReSiLU2_c[2]);
 }
 
 
 template <typename T>
-__inline__ __device__ void resilu2_bw(T out_grad, uint8_t flag, T& in_grad)
+__inline__ __device__ void resilu2_bw(float out_grad, uint8_t flag, T& in_grad)
 {
-    float out_grad_ {out_grad};
-    in_grad = out_grad_ * (
+    in_grad = out_grad * (
         (flag > 0) * ReSiLU2_a[0] + (flag > 1) * ReSiLU2_a[1] + (flag > 2) * ReSiLU2_a[2]
     );
 }

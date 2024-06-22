@@ -39,7 +39,7 @@ def resilu2_ref(input: torch.Tensor) -> torch.Tensor:
 
 
 def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, num_repeat=100, print_msg=False):
-    x = (torch.rand(input_size, dtype=dtype, device=device) - 0.5) * 2
+    x = (torch.rand(input_size, dtype=dtype, device=device) - 0.5) * 20
     x_1 = x.clone().requires_grad_()
     x_2 = x.clone().requires_grad_()
 

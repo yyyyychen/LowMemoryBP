@@ -3,11 +3,12 @@
 
 std::vector<torch::Tensor> regelu2_fw(torch::Tensor& input)
 {
+    at::cuda::CUDAGuard device_guard{(char)input.get_device()};
+
     torch::Tensor input_1d = input.flatten().contiguous();
     CHECK_DEVICE(input);
     CHECK_CONTIGUOUS(input);
 
-    at::cuda::CUDAGuard device_guard{(char)input.get_device()};
     const int64_t N{input.numel()};
     torch::Tensor output_1d = torch::empty({N}, input.options());
     torch::Tensor flag = torch::empty({(N + 3) / 4}, input.options().dtype(torch::kUInt8));
@@ -28,6 +29,8 @@ std::vector<torch::Tensor> regelu2_fw(torch::Tensor& input)
 
 torch::Tensor regelu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag)
 {
+    at::cuda::CUDAGuard device_guard{(char)out_grad.get_device()};
+
     torch::Tensor out_grad_1d = out_grad.flatten().contiguous();
     CHECK_DEVICE(out_grad_1d);
     CHECK_CONTIGUOUS(out_grad_1d);
@@ -35,9 +38,7 @@ torch::Tensor regelu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag)
     CHECK_DEVICE(packed_flag);
     CHECK_CONTIGUOUS(packed_flag);
 
-    at::cuda::CUDAGuard device_guard{(char)out_grad.get_device()};
     const int64_t N{out_grad.numel()};
-
 
     torch::Tensor in_grad_1d = torch::empty({N}, out_grad.options());
 
@@ -57,11 +58,12 @@ torch::Tensor regelu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag)
 
 std::vector<torch::Tensor> resilu2_fw(torch::Tensor& input)
 {
+    at::cuda::CUDAGuard device_guard{(char)input.get_device()};
+
     torch::Tensor input_1d = input.flatten().contiguous();
     CHECK_DEVICE(input);
     CHECK_CONTIGUOUS(input);
 
-    at::cuda::CUDAGuard device_guard{(char)input.get_device()};
     const int64_t N{input.numel()};
     torch::Tensor output_1d = torch::empty({N}, input.options());
     torch::Tensor flag = torch::empty({(N + 3) / 4}, input.options().dtype(torch::kUInt8));
@@ -82,6 +84,8 @@ std::vector<torch::Tensor> resilu2_fw(torch::Tensor& input)
 
 torch::Tensor resilu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag)
 {
+    at::cuda::CUDAGuard device_guard{(char)out_grad.get_device()};
+
     torch::Tensor out_grad_1d = out_grad.flatten().contiguous();
     CHECK_DEVICE(out_grad_1d);
     CHECK_CONTIGUOUS(out_grad_1d);
@@ -89,9 +93,7 @@ torch::Tensor resilu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag)
     CHECK_DEVICE(packed_flag);
     CHECK_CONTIGUOUS(packed_flag);
 
-    at::cuda::CUDAGuard device_guard{(char)out_grad.get_device()};
     const int64_t N{out_grad.numel()};
-
 
     torch::Tensor in_grad_1d = torch::empty({N}, out_grad.options());
 

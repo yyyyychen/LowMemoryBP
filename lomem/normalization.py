@@ -18,10 +18,13 @@ class LayerNormFunction(torch.autograd.Function):
     @torch.cuda.amp.custom_bwd
     @torch.autograd.function.once_differentiable
     def backward(ctx, out_grad):
-        # grad = _C.layer_norm_bw(out_grad, ctx.saved_tensors[0], ctx.saved_tensors[1])
-        return None, None, None
+        grad = _C.layer_norm_bw(out_grad, ctx.saved_tensors[0], ctx.saved_tensors[1])
+        return grad, None, None
 
 
 def layer_norm(input: torch.Tensor, normalized_shape: Sequence[int], eps: float) -> torch.Tensor:
+    """
+    Apply LayerNorm without affine transforms.
+    """
     output = LayerNormFunction.apply(input, normalized_shape, eps)
     return output
