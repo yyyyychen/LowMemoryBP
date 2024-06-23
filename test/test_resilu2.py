@@ -1,6 +1,6 @@
 import time
 import torch
-from lomem import activation, packing
+from lomem import functional
 
 
 ReSiLU2_a = [-0.04060357190528599, 1.080925428529668, -0.040321856624382146]
@@ -10,15 +10,15 @@ ReSiLU2_c = [-6.3050461001646445, -0.0008684942046214787, 6.325815242089708]
 class ReSiLU2RefFunction(torch.autograd.Function):
     """
     This python-based implementation is only for checking the correctness of the CUDA-based implementation.
-    For practical usage, please take lomem.activation.resilu2.
+    For practical usage, please take lomem.functional.resilu2.
     """
     @staticmethod
     @torch.cuda.amp.custom_fwd
     def forward(ctx, x: torch.Tensor):
-        flag_1 = packing.pack_bool_to_uint8(
+        flag_1 = functional.pack_bool_to_uint8(
             torch.logical_or(torch.logical_and(x > ReSiLU2_c[0], x < ReSiLU2_c[1]), x > ReSiLU2_c[2])
         )
-        flag_2 = packing.pack_bool_to_uint8(x > ReSiLU2_c[1])
+        flag_2 = functional.pack_bool_to_uint8(x > ReSiLU2_c[1])
         ctx.save_for_backward(flag_1, flag_2)
         return torch.nn.functional.silu(x)
 
@@ -27,8 +27,8 @@ class ReSiLU2RefFunction(torch.autograd.Function):
     @torch.autograd.function.once_differentiable
     def backward(ctx, out_grad: torch.Tensor):
         shape = out_grad.shape
-        flag = packing.unpack_uint8_to_bool(ctx.saved_tensors[0], shape).to(torch.int8)
-        flag += packing.unpack_uint8_to_bool(ctx.saved_tensors[1], shape).to(torch.int8) * 2
+        flag = functional.unpack_uint8_to_bool(ctx.saved_tensors[0], shape).to(torch.int8)
+        flag += functional.unpack_uint8_to_bool(ctx.saved_tensors[1], shape).to(torch.int8) * 2
         grad = out_grad * ((flag > 0) * ReSiLU2_a[0] + (flag > 1) * ReSiLU2_a[1] + (flag > 2) * ReSiLU2_a[2])
         return grad
 
@@ -89,96 +89,96 @@ if __name__ == '__main__':
     shape = (32, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (32, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (32, 197, 768)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (63, 197, 768)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (63, 197, 768)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (63, 197, 768)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (1, 197, 767)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (1, 197, 767)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (1, 197, 767)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (64, 256, 2048)
     dtype = torch.float32
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (64, 256, 2048)
     dtype = torch.float16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
 
     shape = (64, 256, 2048)
     dtype = torch.bfloat16
     print("-------------------------------------------")
-    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
-    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    test_func("lomem resilu2", functional.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
     if max(error_list) < 1e-5:

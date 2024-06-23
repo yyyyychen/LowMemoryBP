@@ -1,5 +1,5 @@
 import torch
-from lomem import packing
+from lomem import functional
 
 
 if __name__ == '__main__':
@@ -9,30 +9,30 @@ if __name__ == '__main__':
 
     shape = (4097,)
     x = torch.rand(shape, device=device) > 0.5
-    packed_flag = packing.pack_bool_to_uint8(x)
-    x_restore = packing.unpack_uint8_to_bool(packed_flag, shape)
+    packed_flag = functional.pack_bool_to_uint8(x)
+    x_restore = functional.unpack_uint8_to_bool(packed_flag, shape)
     if (x != x_restore).any():
         is_pass = False
 
     shape = (4097, 32)
     x = torch.rand(shape, device=device) > 0.5
-    packed_flag = packing.pack_bool_to_uint8(x)
-    x_restore = packing.unpack_uint8_to_bool(packed_flag, shape)
+    packed_flag = functional.pack_bool_to_uint8(x)
+    x_restore = functional.unpack_uint8_to_bool(packed_flag, shape)
     if (x != x_restore).any():
         is_pass = False
 
     shape = (4097, 2, 3)
     x = torch.rand(shape, device=device) > 0.5
-    packed_flag = packing.pack_bool_to_uint8(x)
-    x_restore = packing.unpack_uint8_to_bool(packed_flag, shape)
+    packed_flag = functional.pack_bool_to_uint8(x)
+    x_restore = functional.unpack_uint8_to_bool(packed_flag, shape)
     if (x != x_restore).any():
         is_pass = False
 
 
     shape = (17,)
     x = torch.rand(shape, device=device) > 0.5
-    packed_flag = packing.pack_bool_to_uint8(x)
-    x_restore = packing.unpack_uint8_to_bool(packed_flag, shape)
+    packed_flag = functional.pack_bool_to_uint8(x)
+    x_restore = functional.unpack_uint8_to_bool(packed_flag, shape)
     if (x != x_restore).any():
         is_pass = False
 

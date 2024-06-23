@@ -1,6 +1,6 @@
 import time
 import torch
-from lomem import normalization
+from lomem import functional
 from typing import Sequence
 from functools import reduce
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem rms_norm", lambda x: normalization.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem rms_norm", lambda x: functional.rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch rms_norm", lambda x: torch_rms_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     x_2 = x_.clone().requires_grad_()
     x_3 = x_.clone().requires_grad_()
 
-    y_1 = normalization.rms_norm(x_1, normalized_shape=shape[-1:], eps=eps)
+    y_1 = functional.rms_norm(x_1, normalized_shape=shape[-1:], eps=eps)
     y_2 = torch_rms_norm(x_2, normalized_shape=shape[-1:], eps=eps)
     y_3 = torch_rms_norm(x_3.to(torch.float64), normalized_shape=shape[-1:], eps=eps)
 
