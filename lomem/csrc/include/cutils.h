@@ -56,3 +56,14 @@ template <typename T>
 void layer_norm_bw_2d(int64_t M, int64_t N, void * out_grad_ptr, void * output_ptr, void * rstd_ptr, void * in_grad_ptr);
 
 torch::Tensor layer_norm_bw(torch::Tensor& out_grad, torch::Tensor& output, torch::Tensor& rstd);
+
+
+template <typename T>
+void rms_norm_fw_2d(int64_t M, int64_t N, float eps, void * input_ptr, void * output_ptr, void * rstd);
+
+std::vector<torch::Tensor> rms_norm_fw(torch::Tensor& input, std::vector<int64_t>& normalized_shape, const float& eps);
+
+template <typename T>
+void rms_norm_bw_2d(int64_t M, int64_t N, void * out_grad_ptr, void * output_ptr, void * rstd_ptr, void * in_grad_ptr);
+
+torch::Tensor rms_norm_bw(torch::Tensor& out_grad, torch::Tensor& output, torch::Tensor& rstd);

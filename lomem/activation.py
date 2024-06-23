@@ -19,6 +19,9 @@ class ReGELU2Function(torch.autograd.Function):
 
 
 def regelu2(input: torch.Tensor) -> torch.Tensor:
+    """
+    Apply ReGELU2.
+    """
     output = ReGELU2Function.apply(input)
     return output
 
@@ -40,5 +43,8 @@ class ReSiLU2Function(torch.autograd.Function):
 
 
 def resilu2(input: torch.Tensor) -> torch.Tensor:
+    """
+    Apply ReSiLU2.
+    """
     output = ReSiLU2Function.apply(input)
     return output

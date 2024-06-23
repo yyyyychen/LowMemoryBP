@@ -4,56 +4,7 @@
 
 constexpr static int num_threads {128}; 
 constexpr static int inner_repeat {8};
-
-
-// template<typename T>
-// __inline__ __device__ void Welford(T val, T* __restrict__ mean, T* __restrict__ m2, int* __restrict__ count) {
-//     // Use Welford Online algorithem to compute mean and variance
-//     // For more details you can refer to:
-//     // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
-//     *count += 1;
-//     T delta1 = val - *mean;
-//     *mean += delta1 / (*count);
-//     T delta2 = val - *mean;
-//     *m2 += delta1 * delta2;
-// }
-
-
-// template<typename T>
-// __inline__ __device__ void Welford(T b_mean, T b_m2, int b_count, T* __restrict__ mean, T* __restrict__ m2, int* __restrict__ count) {
-//     if (b_count == 0) return;
-//     int new_count = *count + b_count;
-//     T nb_over_n = float(b_count) / float(new_count);
-//     T na_over_n = float(*count) / float(new_count);
-//     T delta = b_mean - *mean;
-//     *mean = na_over_n * (*mean) + nb_over_n * b_mean;
-//     *m2 += b_m2 + delta * delta * (*count) * nb_over_n;
-//     *count = new_count;
-// }
-
-
-// template<typename T>
-// __inline__ __device__ void WelfordWarpReduce(T* __restrict__ mean, T* __restrict__  m2, int* __restrict__ count) {
-//     #pragma unroll
-//     for (unsigned int offset = 16; offset > 0; offset >>= 1) {
-//         T b_mean = __shfl_down_sync(0xffffffff, (float)*mean, offset, WarpSize);
-//         T b_m2 = __shfl_down_sync(0xffffffff, (float)*m2, offset, WarpSize);
-//         T b_count = __shfl_down_sync(0xffffffff, *count, offset, WarpSize);
-//         Welford(b_mean, b_m2, b_count, mean, m2, count);
-//     }
-// }
-
-
-// template<typename T>
-// __inline__ __device__ void WelfordWarpAllReduce(T* __restrict__ mean, T* __restrict__ m2, int* __restrict__ count) {
-//     //reduce to thread 0
-//     WelfordWarpReduce<T>(mean, m2, count);
-
-//     //broadcast from thread 0
-//     *mean = __shfl_sync(0xffffffff, (float)*mean, 0, WarpSize);
-//     *m2 = __shfl_sync(0xffffffff, (float)*m2, 0, WarpSize);
-//     *count = __shfl_sync(0xffffffff, *count, 0, WarpSize);
-// }
+static constexpr int Max_sharedColumn = 4096;
 
 
 __inline__ __device__ void Welford(float val, float* __restrict__ mean, float* __restrict__ m2, int* __restrict__ count) {
@@ -102,42 +53,6 @@ __inline__ __device__ void WelfordWarpAllReduce(float* __restrict__ mean, float*
 }
 
 
-__inline__ __device__ void Mean(float val, float* __restrict__ mean, int* __restrict__ count) {
-    *count += 1;
-    *mean += (val - *mean) / float(*count);
-}
-
-
-__inline__ __device__ void Mean(float b_mean, int b_count, float* __restrict__ mean, int* __restrict__ count) {
-    if (b_count == 0) return;
-    int new_count = *count + b_count;
-    float nb_over_n = float(b_count) / float(new_count);
-    float na_over_n = float(*count) / float(new_count);
-    *mean = na_over_n * (*mean) + nb_over_n * b_mean;
-    *count = new_count;
-}
-
-
-__inline__ __device__ void MeanWarpReduce(float* __restrict__  mean, int* __restrict__ count) {
-    #pragma unroll
-    for (unsigned int offset = 16; offset > 0; offset >>= 1) {
-        float b_mean = __shfl_down_sync(0xffffffff, *mean, offset, WarpSize);
-        float b_count = __shfl_down_sync(0xffffffff, *count, offset, WarpSize);
-        Mean(b_mean, b_count, mean, count);
-    }
-}
-
-
-__inline__ __device__ void MeanWarpAllReduce(float* __restrict__ mean, int* __restrict__ count) {
-    //reduce to thread 0
-    MeanWarpReduce(mean, count);
-
-    //broadcast from thread 0
-    *mean = __shfl_sync(0xffffffff, *mean, 0, WarpSize);
-    *count = __shfl_sync(0xffffffff, *count, 0, WarpSize);
-}
-
-
 __inline__ __device__ void TwoMean(float val1, float val2, float* __restrict__ mean1, float* __restrict__ mean2, int* __restrict__ count) {
     *count += 1;
     *mean1 += (val1 - *mean1) / float(*count);
@@ -179,8 +94,16 @@ __inline__  __device__ void TwoMeanWarpAllReduce(float* __restrict__ mean1, floa
 template <typename T, int vec_size>
 __global__ void
 layer_norm_fw_2d_kernel
-(int64_t M, int64_t N, float eps, T * __restrict__ input_ptr, T * __restrict__ output_ptr, float * __restrict__ rstd_ptr)
+(int64_t M, int64_t N, float eps,
+T * __restrict__ input_ptr,
+T * __restrict__ output_ptr,
+float * __restrict__ rstd_ptr, const int sN)
 {
+    extern __shared__ float smem_data [];
+
+    int smem_head_id = threadIdx.y * sN;
+    const int smem_stride = sN / vec_size;
+
     constexpr int num_threads_n {32};
     constexpr int num_threads_m {num_threads / 32};
     constexpr int bM {num_threads_m * inner_repeat};
@@ -198,14 +121,29 @@ layer_norm_fw_2d_kernel
             float mean {0};
             float m2 {0};
 
+            const int gid_start = gm_thr * N;
+
             // Welford
             #pragma unroll 1
-            for (int gn_thr = threadIdx.x * vec_size; gn_thr < N; gn_thr += 32 * vec_size) {
-                const int gid = gm_thr * N + gn_thr;
+            for (int gn_thr = threadIdx.x * vec_size; gn_thr < sN; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
                 input_vec = *reinterpret_cast<vec_t*>(input_ptr + gid);
                 #pragma unroll
                 for (int k {0}; k < vec_size; ++k) {
-                    Welford(input_vec.elem[k], &mean, &m2, &count);
+                    float input_elem {input_vec.elem[k]};
+                    Welford(input_elem, &mean, &m2, &count);
+                    smem_data[smem_head_id + smem_stride * k + gn_thr / vec_size] = input_elem;
+                }
+            }
+
+            #pragma unroll 1
+            for (int gn_thr = threadIdx.x * vec_size + sN; gn_thr < N; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
+                input_vec = *reinterpret_cast<vec_t*>(input_ptr + gid);
+                #pragma unroll
+                for (int k {0}; k < vec_size; ++k) {
+                    float input_elem {input_vec.elem[k]};
+                    Welford(input_elem, &mean, &m2, &count);
                 }
             }
 
@@ -217,12 +155,24 @@ layer_norm_fw_2d_kernel
 
             // output
             #pragma unroll 1
-            for (int gn_thr = threadIdx.x * vec_size; gn_thr < N; gn_thr += 32 * vec_size) {
-                const int gid = gm_thr * N + gn_thr;
+            for (int gn_thr = threadIdx.x * vec_size; gn_thr < sN; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
+                #pragma unroll
+                for (int k {0}; k < vec_size; ++k) {
+                    float input_elem {smem_data[smem_head_id + smem_stride * k + gn_thr / vec_size]};
+                    output_vec.elem[k] = (input_elem - mean) * rstd;
+                }
+                *reinterpret_cast<vec_t*>(output_ptr + gid) = output_vec;
+            }
+
+            #pragma unroll 1
+            for (int gn_thr = threadIdx.x * vec_size + sN; gn_thr < N; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
                 input_vec = *reinterpret_cast<vec_t*>(input_ptr + gid);
                 #pragma unroll
                 for (int k {0}; k < vec_size; ++k) {
-                    output_vec.elem[k] = (float(input_vec.elem[k]) - mean) * rstd;
+                    float input_elem {input_vec.elem[k]};
+                    output_vec.elem[k] = (input_elem - mean) * rstd;
                 }
                 *reinterpret_cast<vec_t*>(output_ptr + gid) = output_vec;
             }
@@ -234,12 +184,22 @@ layer_norm_fw_2d_kernel
 template <typename T, int vec_size>
 __global__ void
 layer_norm_bw_2d_kernel
-(int64_t M, int64_t N, T * __restrict__ out_grad_ptr, T * __restrict__ output_ptr, float * __restrict__ rstd_ptr, T * __restrict__ in_grad_ptr)
+(int64_t M, int64_t N,
+T * __restrict__ out_grad_ptr, T * __restrict__ output_ptr,
+float * __restrict__ rstd_ptr, T * __restrict__ in_grad_ptr, const int sN)
 {
+    extern __shared__ float smem_data [];
+
+    int smem_head_id = threadIdx.y * sN;
+    const int smem_stride = sN / vec_size;
+
     constexpr int num_threads_n {32};
-    constexpr int num_threads_m {num_threads / 32};
+    constexpr int num_threads_m {num_threads / 2 / 32};
     constexpr int bM {num_threads_m * inner_repeat};
     const int gm_blk = bM * blockIdx.x;
+
+    float * smem_out_grad {(float *)smem_data};
+    float * smem_output {(float *)smem_data + sN * num_threads_m};
 
     using vec_t = Pack<T, vec_size>;
     vec_t out_grad_vec;
@@ -254,16 +214,40 @@ layer_norm_bw_2d_kernel
             float mean1 {0};
             float mean2 {0};
 
+            const int gid_start {gm_thr * N};
+
             #pragma unroll 1
-            for (int gn_thr = threadIdx.x * vec_size; gn_thr < N; gn_thr += 32 * vec_size) {
-                const int gid = gm_thr * N + gn_thr;
+            for (int gn_thr = threadIdx.x * vec_size; gn_thr < sN; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
                 out_grad_vec = *reinterpret_cast<vec_t*>(out_grad_ptr + gid);
                 output_vec = *reinterpret_cast<vec_t*>(output_ptr + gid);
                 #pragma unroll
                 for (int k {0}; k < vec_size; ++k) {
+                    float out_grad_elem {out_grad_vec.elem[k]};
+                    float output_elem {output_vec.elem[k]};
+                    int sid = smem_head_id + k * smem_stride + gn_thr / vec_size;
+                    smem_out_grad[sid] = out_grad_elem;
+                    smem_output[sid] = output_elem;
                     TwoMean(
-                        float(out_grad_vec.elem[k]),
-                        float(out_grad_vec.elem[k]) * float(output_vec.elem[k]),
+                        out_grad_elem,
+                        out_grad_elem * output_elem,
+                        &mean1, &mean2, &count
+                    );
+                }
+            }
+
+            #pragma unroll 1
+            for (int gn_thr = threadIdx.x * vec_size + sN; gn_thr < N; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
+                out_grad_vec = *reinterpret_cast<vec_t*>(out_grad_ptr + gid);
+                output_vec = *reinterpret_cast<vec_t*>(output_ptr + gid);
+                #pragma unroll
+                for (int k {0}; k < vec_size; ++k) {
+                    float out_grad_elem {out_grad_vec.elem[k]};
+                    float output_elem {output_vec.elem[k]};
+                    TwoMean(
+                        out_grad_elem,
+                        out_grad_elem * output_elem,
                         &mean1, &mean2, &count
                     );
                 }
@@ -277,13 +261,29 @@ layer_norm_bw_2d_kernel
 
             // output
             #pragma unroll 1
-            for (int gn_thr = threadIdx.x * vec_size; gn_thr < N; gn_thr += 32 * vec_size) {
-                const int gid = gm_thr * N + gn_thr;
+            for (int gn_thr = threadIdx.x * vec_size; gn_thr < sN; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
+                #pragma unroll
+                for (int k {0}; k < vec_size; ++k) {
+                    int sid = smem_head_id + k * smem_stride + gn_thr / vec_size;
+                    float out_grad_elem {smem_out_grad[k]};
+                    float output_elem {smem_output[k]};
+                    in_grad_vec.elem[k] = out_grad_elem * rstd - mean1 - mean2 * output_elem;
+                }
+                *reinterpret_cast<vec_t*>(in_grad_ptr + gid) = in_grad_vec;
+            }
+
+            // output
+            #pragma unroll 1
+            for (int gn_thr = threadIdx.x * vec_size + sN; gn_thr < N; gn_thr += 32 * vec_size) {
+                const int gid = gid_start + gn_thr;
                 out_grad_vec = *reinterpret_cast<vec_t*>(out_grad_ptr + gid);
                 output_vec = *reinterpret_cast<vec_t*>(output_ptr + gid);
                 #pragma unroll
                 for (int k {0}; k < vec_size; ++k) {
-                    in_grad_vec.elem[k] = float(out_grad_vec.elem[k]) * rstd - mean1 - mean2 * float(output_vec.elem[k]);
+                    float out_grad_elem {out_grad_vec.elem[k]};
+                    float output_elem {output_vec.elem[k]};
+                    in_grad_vec.elem[k] = out_grad_elem * rstd - mean1 - mean2 * output_elem;
                 }
                 *reinterpret_cast<vec_t*>(in_grad_ptr + gid) = in_grad_vec;
             }
@@ -303,22 +303,37 @@ void layer_norm_fw_2d_(int64_t M, int64_t N, float eps, void * input_ptr_, void 
     constexpr int bM {num_threads / 32 * inner_repeat};
     dim3 gridDim {(M + bM - 1) / bM};
 
+    int sN = min(Max_sharedColumn, int(N));
+    int smemsize = (num_threads / 32) * sN * sizeof(float);
+
     if (check_align(input_ptr, 16, N) && check_align(output_ptr, 16, N)) {
         constexpr int vec_size {16 / sizeof(T)};
-        layer_norm_fw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, eps, input_ptr, output_ptr, rstd_ptr);
+        auto running_kernel = layer_norm_fw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, eps, input_ptr, output_ptr, rstd_ptr, sN);
     } else if (check_align(input_ptr, 8, N) && check_align(output_ptr, 8, N)) {
         constexpr int vec_size {8 / sizeof(T)};
-        layer_norm_fw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, eps, input_ptr, output_ptr, rstd_ptr);
+        auto running_kernel = layer_norm_fw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, eps, input_ptr, output_ptr, rstd_ptr, sN);
     } else if (check_align(input_ptr, 4, N) && check_align(output_ptr, 4, N)) {
         constexpr int vec_size {4 / sizeof(T)};
-        layer_norm_fw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, eps, input_ptr, output_ptr, rstd_ptr);
+        auto running_kernel = layer_norm_fw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, eps, input_ptr, output_ptr, rstd_ptr, sN);
     } else {
         constexpr int vec_size {1};
-        layer_norm_fw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, eps, input_ptr, output_ptr, rstd_ptr);
+        auto running_kernel = layer_norm_fw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, eps, input_ptr, output_ptr, rstd_ptr, sN);
     }
 }
 
@@ -331,26 +346,41 @@ void layer_norm_bw_2d_(int64_t M, int64_t N, void * out_grad_ptr_, void * output
     float * rstd_ptr = reinterpret_cast<float*>(rstd_ptr_);
     T * in_grad_ptr = reinterpret_cast<T*>(in_grad_ptr_);
 
-    dim3 blockDim {32, num_threads / 32};
-    constexpr int bM {num_threads / 32 * inner_repeat};
+    dim3 blockDim {32, num_threads / 2 / 32};
+    constexpr int bM {num_threads / 2 / 32 * inner_repeat};
     dim3 gridDim {(M + bM - 1) / bM};
+
+    int sN = min(Max_sharedColumn, int(N));
+    int smemsize = 2 * (num_threads / 2 / 32) * sN * sizeof(float);
 
     if (check_align(out_grad_ptr, 16, N) && check_align(output_ptr, 16, N) && check_align(in_grad_ptr, 16, N)) {
         constexpr int vec_size {16 / sizeof(T)};
-        layer_norm_bw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr);
+        auto running_kernel = layer_norm_bw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr, sN);
     } else if (check_align(out_grad_ptr, 8, N) && check_align(output_ptr, 8, N) && check_align(in_grad_ptr, 8, N)) {
         constexpr int vec_size {8 / sizeof(T)};
-        layer_norm_bw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr);
+        auto running_kernel = layer_norm_bw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr, sN);
     } else if (check_align(out_grad_ptr, 4, N) && check_align(output_ptr, 4, N) && check_align(in_grad_ptr, 4, N)) {
         constexpr int vec_size {4 / sizeof(T)};
-        layer_norm_bw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr);
+        auto running_kernel = layer_norm_bw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr, sN);
     } else {
         constexpr int vec_size {1};
-        layer_norm_bw_2d_kernel<T, vec_size><<<gridDim, blockDim>>>
-            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr);
+        auto running_kernel = layer_norm_bw_2d_kernel<T, vec_size>;
+        cudaFuncSetAttribute(running_kernel,
+            cudaFuncAttributeMaxDynamicSharedMemorySize, smemsize);
+        running_kernel<<<gridDim, blockDim, smemsize>>>
+            (M, N, out_grad_ptr, output_ptr, rstd_ptr, in_grad_ptr, sN);
     }
 }
 

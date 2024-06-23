@@ -44,9 +44,9 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
     x_2 = x.clone().requires_grad_()
 
     y_1 = func1(x_1)
-    y_1.sum().backward()
+    y_1.norm().backward()
     y_2 = func2(x_2)
-    y_2.sum().backward()
+    y_2.norm().backward()
 
     diff_fw = (y_1 - y_2).abs().mean()
     diff_bw = (x_1.grad - x_2.grad).abs().mean()
@@ -55,7 +55,7 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
     start_time_1 = time.time()
     for _ in range(num_repeat):
         y_1 = func1(x_1)
-        y_1.sum().backward()
+        y_1.norm().backward()
     torch.cuda.synchronize(device)
     end_time_1 = time.time()
     mean_time_1 = (end_time_1 - start_time_1) / num_repeat
@@ -64,7 +64,7 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
     start_time_2 = time.time()
     for _ in range(num_repeat):
         y_2 = func2(x_2)
-        y_2.sum().backward()
+        y_2.norm().backward()
     torch.cuda.synchronize(device)
     end_time_2 = time.time()
     mean_time_2 = (end_time_2 - start_time_2) / num_repeat
@@ -158,7 +158,30 @@ if __name__ == '__main__':
     error_list.append(error)
 
 
-    if max(error_list) < 1e-7:
+    shape = (64, 256, 2048)
+    dtype = torch.float32
+    print("-------------------------------------------")
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
+
+
+    shape = (64, 256, 2048)
+    dtype = torch.float16
+    print("-------------------------------------------")
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
+
+
+    shape = (64, 256, 2048)
+    dtype = torch.bfloat16
+    print("-------------------------------------------")
+    test_func("lomem resilu2", activation.resilu2, "torch silu", torch.nn.functional.silu, shape, dtype, device, num_repeat, True)
+    error = test_func("lomem resilu2", activation.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
+    error_list.append(error)
+
+    if max(error_list) < 1e-5:
         print(f"pass! max error: {max(error_list)}")
     else:
-        print(f"max error: {error}")
+        print(f"max error: {max(error_list)}")

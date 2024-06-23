@@ -1,26 +1,13 @@
-import sys
-import warnings
 import os
-import re
-import ast
 import glob
 from pathlib import Path
-from packaging.version import parse, Version
-import platform
 
 from setuptools import setup, find_packages
-import subprocess
-
-import urllib.request
-import urllib.error
-from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
 import torch
 from torch.utils.cpp_extension import (
     BuildExtension,
-    CppExtension,
     CUDAExtension,
-    CUDA_HOME,
 )
 
 
@@ -30,42 +17,6 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 CSRC_DIR = os.path.join(this_dir, "lomem/csrc")
 
 PACKAGE_NAME = "lomem"
-
-
-def get_platform():
-    """
-    Returns the platform name as used in wheel filenames.
-    """
-    if sys.platform.startswith("linux"):
-        return f'linux_{platform.uname().machine}'
-    elif sys.platform == "darwin":
-        mac_version = ".".join(platform.mac_ver()[0].split(".")[:2])
-        return f"macosx_{mac_version}_x86_64"
-    elif sys.platform == "win32":
-        return "win_amd64"
-    else:
-        raise ValueError("Unsupported platform: {}".format(sys.platform))
-
-
-def get_cuda_bare_metal_version(cuda_dir):
-    raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
-    output = raw_output.split()
-    release_idx = output.index("release") + 1
-    bare_metal_version = parse(output[release_idx].split(",")[0])
-
-    return raw_output, bare_metal_version
-
-
-def check_if_cuda_home_none(global_option: str) -> None:
-    if CUDA_HOME is not None:
-        return
-    # warn instead of error because user could be downloading prebuilt wheels, so nvcc won't be necessary
-    # in that case.
-    warnings.warn(
-        f"{global_option} was requested, but nvcc was not found.  Are you sure your environment has nvcc available?  "
-        "If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, "
-        "only images whose names contain 'devel' will provide nvcc."
-    )
 
 
 def append_nvcc_threads(nvcc_extra_args):
@@ -108,14 +59,6 @@ ext_modules.append(
                     "--expt-relaxed-constexpr",
                     "--expt-extended-lambda",
                     "--use_fast_math",
-                    # "--ptxas-options=-v",
-                    # "--ptxas-options=-O2",
-                    # "-lineinfo",
-                    # "-DFLASHATTENTION_DISABLE_BACKWARD",
-                    # "-DFLASHATTENTION_DISABLE_DROPOUT",
-                    # "-DFLASHATTENTION_DISABLE_ALIBI",
-                    # "-DFLASHATTENTION_DISABLE_UNEVEN_K",
-                    # "-DFLASHATTENTION_DISABLE_LOCAL",
                 ]
                 + cc_flag
             ),
@@ -125,10 +68,6 @@ ext_modules.append(
         ],
     )
 )
-
-
-def get_package_version():
-    return "0.1"
 
 
 class NinjaBuildExtension(BuildExtension):
@@ -153,7 +92,7 @@ class NinjaBuildExtension(BuildExtension):
 
 setup(
     name=PACKAGE_NAME,
-    version=get_package_version(),
+    version="0.1",
     packages=find_packages(
         exclude=(
             "build",
