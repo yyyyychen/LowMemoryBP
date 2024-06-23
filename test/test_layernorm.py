@@ -1,6 +1,6 @@
 import time
 import torch
-from lomem import normalization
+from lomem import functional
 
 
 def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, num_repeat=100, print_msg=False):
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     dtype = torch.float32
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     dtype = torch.float16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     dtype = torch.bfloat16
     print("-------------------------------------------")
     error = test_func(
-        "lomem layer_norm", lambda x: normalization.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
+        "lomem layer_norm", lambda x: functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         "torch layer_norm", lambda x: torch.nn.functional.layer_norm(x, normalized_shape=shape[-1:], eps=eps),
         shape, dtype, device, num_repeat, True)
     error_list.append(error)
