@@ -32,27 +32,27 @@ bool_pack_1d_kernel(const int64_t N, bool * input_ptr, uint8_t * output_ptr)
 }
 
 
-void bool_pack_1d(int64_t N, void * input_ptr, void * output_ptr)
+void bool_pack_1d(int64_t N, void * input_ptr_, void * output_ptr_)
 {
-    bool * input_ptr_ = reinterpret_cast<bool*>(input_ptr);
-    uint8_t * output_ptr_ = reinterpret_cast<uint8_t*>(output_ptr);
+    bool * input_ptr = reinterpret_cast<bool*>(input_ptr_);
+    uint8_t * output_ptr = reinterpret_cast<uint8_t*>(output_ptr_);
     dim3 blockDim{num_threads};
-    if (check_align(input_ptr_, sizeof(bool) * 8, N)) {
+    if (check_align(input_ptr, sizeof(bool) * 8, N)) {
         constexpr int blocksize = num_threads * inner_repeat * 8;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
-        bool_pack_1d_kernel<8><<<gridDim, blockDim>>>(N, input_ptr_, output_ptr_);
-    } else if (check_align(input_ptr_, sizeof(bool) * 4, N)) {
+        bool_pack_1d_kernel<8><<<gridDim, blockDim>>>(N, input_ptr, output_ptr);
+    } else if (check_align(input_ptr, sizeof(bool) * 4, N)) {
         constexpr int blocksize = num_threads * inner_repeat * 4;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
-        bool_pack_1d_kernel<4><<<gridDim, blockDim>>>(N, input_ptr_, output_ptr_);
-    } else if (check_align(input_ptr_, sizeof(bool) * 2, N)) {
+        bool_pack_1d_kernel<4><<<gridDim, blockDim>>>(N, input_ptr, output_ptr);
+    } else if (check_align(input_ptr, sizeof(bool) * 2, N)) {
         constexpr int blocksize = num_threads * inner_repeat * 2;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
-        bool_pack_1d_kernel<2><<<gridDim, blockDim>>>(N, input_ptr_, output_ptr_);
+        bool_pack_1d_kernel<2><<<gridDim, blockDim>>>(N, input_ptr, output_ptr);
     } else {
         constexpr int blocksize = num_threads * inner_repeat;
         dim3 gridDim{(N + blocksize - 1) / blocksize};
-        bool_pack_1d_kernel<1><<<gridDim, blockDim>>>(N, input_ptr_, output_ptr_);
+        bool_pack_1d_kernel<1><<<gridDim, blockDim>>>(N, input_ptr, output_ptr);
     }
 }
 
