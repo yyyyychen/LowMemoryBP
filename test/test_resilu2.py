@@ -81,7 +81,7 @@ def test_func(func1_name, func1, func2_name, func2, input_size, dtype, device, n
 
 
 if __name__ == '__main__':
-    device = 'cuda:1'
+    device = 'cuda:0'
     num_repeat = 100
 
     error_list = []
