@@ -28,9 +28,9 @@ class ReSiLU2(torch.nn.Module):
         return output
 
 
-class LayerNorm(torch.nn.Module):
+class MSLayerNorm(torch.nn.Module):
     """
-    Apply LayerNorm without affine transforms to the last several dimensions according to the normalized_shape argument.
+    Apply MS-LayerNorm without affine transforms to the last several dimensions according to the normalized_shape argument.
     Args:
         normalized_shape (int or list or torch.Size): input shape from an expected input of size.
             If a single integer is used, it is treated as a singleton list, and this module will
@@ -50,9 +50,9 @@ class LayerNorm(torch.nn.Module):
         return output
 
 
-class RMSNorm(torch.nn.Module):
+class MSRMSNorm(torch.nn.Module):
     """
-    Apply RMSNorm without affine transforms to the last several dimensions according to the normalized_shape argument.
+    Apply MS-RMSNorm without affine transforms to the last several dimensions according to the normalized_shape argument.
     Args:
         normalized_shape (int or list or torch.Size): input shape from an expected input of size.
             If a single integer is used, it is treated as a singleton list, and this module will
