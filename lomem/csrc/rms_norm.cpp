@@ -22,11 +22,11 @@ std::vector<torch::Tensor> rms_norm_fw(torch::Tensor& input, std::vector<int64_t
 
     c10::ScalarType scalar_t = input.scalar_type();
     if (scalar_t == c10::ScalarType::Float) {
-        rms_norm_fw_2d<float>(M, N, eps, input.mutable_data_ptr(), output_2d.mutable_data_ptr(), rstd.mutable_data_ptr());
+        rms_norm_fw_2d<float>(M, N, eps, input.data_ptr(), output_2d.data_ptr(), rstd.data_ptr());
     } else if (scalar_t == c10::ScalarType::Half) {
-        rms_norm_fw_2d<half>(M, N, eps, input.mutable_data_ptr(), output_2d.mutable_data_ptr(), rstd.mutable_data_ptr());
+        rms_norm_fw_2d<half>(M, N, eps, input.data_ptr(), output_2d.data_ptr(), rstd.data_ptr());
     } else if (scalar_t == c10::ScalarType::BFloat16) {
-        rms_norm_fw_2d<nv_bfloat16>(M, N, eps, input.mutable_data_ptr(), output_2d.mutable_data_ptr(), rstd.mutable_data_ptr());
+        rms_norm_fw_2d<nv_bfloat16>(M, N, eps, input.data_ptr(), output_2d.data_ptr(), rstd.data_ptr());
     } else {
         std::cout << "rms_norm_fw only supports fp32, fp16 and bf16 type" << std::endl;
     }
@@ -54,13 +54,13 @@ torch::Tensor rms_norm_bw(torch::Tensor& out_grad, torch::Tensor& output, torch:
     c10::ScalarType scalar_t = output.scalar_type();
     if (scalar_t == c10::ScalarType::Float) {
         rms_norm_bw_2d<float>
-            (M, N, out_grad_2d.mutable_data_ptr(), output_2d.mutable_data_ptr(), rstd.mutable_data_ptr(), in_grad_2d.mutable_data_ptr());
+            (M, N, out_grad_2d.data_ptr(), output_2d.data_ptr(), rstd.data_ptr(), in_grad_2d.data_ptr());
     } else if (scalar_t == c10::ScalarType::Half) {
         rms_norm_bw_2d<half>
-            (M, N, out_grad_2d.mutable_data_ptr(), output_2d.mutable_data_ptr(), rstd.mutable_data_ptr(), in_grad_2d.mutable_data_ptr());
+            (M, N, out_grad_2d.data_ptr(), output_2d.data_ptr(), rstd.data_ptr(), in_grad_2d.data_ptr());
     } else if (scalar_t == c10::ScalarType::BFloat16) {
         rms_norm_bw_2d<nv_bfloat16>
-            (M, N, out_grad_2d.mutable_data_ptr(), output_2d.mutable_data_ptr(), rstd.mutable_data_ptr(), in_grad_2d.mutable_data_ptr());
+            (M, N, out_grad_2d.data_ptr(), output_2d.data_ptr(), rstd.data_ptr(), in_grad_2d.data_ptr());
     } else {
         std::cout << "rms_norm_bw only supports fp32, fp16 and bf16 type" << std::endl;
     }

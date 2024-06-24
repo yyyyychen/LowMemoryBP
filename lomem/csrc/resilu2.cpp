@@ -15,11 +15,11 @@ std::vector<torch::Tensor> resilu2_fw(torch::Tensor& input)
 
     c10::ScalarType scalar_t = input.scalar_type();
     if (scalar_t == c10::ScalarType::Float) {
-        resilu2_fw_1d<float>(N, input.mutable_data_ptr(), output_1d.mutable_data_ptr(), flag.mutable_data_ptr());
+        resilu2_fw_1d<float>(N, input.data_ptr(), output_1d.data_ptr(), flag.data_ptr());
     } else if (scalar_t == c10::ScalarType::Half) {
-        resilu2_fw_1d<half>(N, input.mutable_data_ptr(), output_1d.mutable_data_ptr(), flag.mutable_data_ptr());
+        resilu2_fw_1d<half>(N, input.data_ptr(), output_1d.data_ptr(), flag.data_ptr());
     } else if (scalar_t == c10::ScalarType::BFloat16) {
-        resilu2_fw_1d<nv_bfloat16>(N, input.mutable_data_ptr(), output_1d.mutable_data_ptr(), flag.mutable_data_ptr());
+        resilu2_fw_1d<nv_bfloat16>(N, input.data_ptr(), output_1d.data_ptr(), flag.data_ptr());
     } else {
         std::cout << "resilu2_fw only supports fp32, fp16 and bf16 type" << std::endl;
     }
@@ -44,11 +44,11 @@ torch::Tensor resilu2_bw(torch::Tensor& out_grad, torch::Tensor& packed_flag)
 
     c10::ScalarType scalar_t = out_grad.scalar_type();
     if (scalar_t == c10::ScalarType::Float) {
-        resilu2_bw_1d<float>(N, out_grad_1d.mutable_data_ptr(), packed_flag.mutable_data_ptr(), in_grad_1d.mutable_data_ptr());
+        resilu2_bw_1d<float>(N, out_grad_1d.data_ptr(), packed_flag.data_ptr(), in_grad_1d.data_ptr());
     } else if (scalar_t == c10::ScalarType::Half) {
-        resilu2_bw_1d<half>(N, out_grad_1d.mutable_data_ptr(), packed_flag.mutable_data_ptr(), in_grad_1d.mutable_data_ptr());
+        resilu2_bw_1d<half>(N, out_grad_1d.data_ptr(), packed_flag.data_ptr(), in_grad_1d.data_ptr());
     } else if (scalar_t == c10::ScalarType::BFloat16) {
-        resilu2_bw_1d<nv_bfloat16>(N, out_grad_1d.mutable_data_ptr(), packed_flag.mutable_data_ptr(), in_grad_1d.mutable_data_ptr());
+        resilu2_bw_1d<nv_bfloat16>(N, out_grad_1d.data_ptr(), packed_flag.data_ptr(), in_grad_1d.data_ptr());
     } else {
         std::cout << "resilu2_bw only supports fp32, fp16 and bf16 type" << std::endl;
     }

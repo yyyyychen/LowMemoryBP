@@ -12,7 +12,7 @@ torch::Tensor bool_to_uint8(torch::Tensor& input)
 
     const int64_t N{input.numel()};
     torch::Tensor packed_flag = torch::empty({(N + 7) / 8}, input.options().dtype(torch::kUInt8));
-    bool_pack_1d(N, input_1d.mutable_data_ptr(), packed_flag.mutable_data_ptr());
+    bool_pack_1d(N, input_1d.data_ptr(), packed_flag.data_ptr());
     return packed_flag;
 }
 
@@ -28,6 +28,6 @@ torch::Tensor uint8_to_bool(torch::Tensor& input)
 
     const int64_t N{input.numel()};
     torch::Tensor unpacked_flag = torch::empty({N * 8}, input.options().dtype(torch::kBool));
-    bool_unpack_1d(N, input_1d.mutable_data_ptr(), unpacked_flag.mutable_data_ptr());
+    bool_unpack_1d(N, input_1d.data_ptr(), unpacked_flag.data_ptr());
     return unpacked_flag;
 }

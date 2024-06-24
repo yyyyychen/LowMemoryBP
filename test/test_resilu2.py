@@ -181,7 +181,7 @@ if __name__ == '__main__':
     error = test_func("lomem resilu2", functional.resilu2, "py-ref resilu2", resilu2_ref, shape, dtype, device, num_repeat, False)
     error_list.append(error)
 
-    if max(error_list) < 1e-5:
+    if max(error_list) < 1e-7:
         print(f"pass! max error: {max(error_list)}")
     else:
         print(f"max error: {max(error_list)}")
