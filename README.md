@@ -3,8 +3,8 @@
 This is the official repository of our paper *"Reducing Fine-Tuning Memory Overhead by Approximate and Memory-Sharing Backpropagation"*.
 The Approx-BP and MS-BP techniques from our paper can **reduce a significant amount of GPU activation memory usage** during fine-tuning stage, **without slowing down the training throughput**.
 
-![Activation_Memory](./pictures/activation_memory.png)
-Our method can reduce the activation memory from activation layers and normalization layers.
+![Activation_Memory](./pictures/bar.png)
+Fig 1: The comparision of the our method with gradient checkpointing and Mesa.
 
 Up to now, we have applied these techniques to two activation layers (GELU, SiLU) and two normalization layers (LayerNorm, RMSNorm).
 The deduced low-memory counterparts are packed in the `lomem` torch-based package.
