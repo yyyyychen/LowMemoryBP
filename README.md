@@ -3,8 +3,11 @@
 This is the official repository of our paper *"Reducing Fine-Tuning Memory Overhead by Approximate and Memory-Sharing Backpropagation"*[[paper]](https://arxiv.org/abs/2406.16282).
 The Approx-BP and MS-BP techniques from our paper can **reduce a significant amount of GPU activation memory usage** during fine-tuning stage, **without slowing down the training throughput**.
 
-![Activation_Memory](./pictures/bar.png)
-Fig 1: The comparision of the our method with gradient checkpointing and Mesa.
+![activation](./pictures/activation_memory.png)
+Fig 1: The effect of our method on the activation memory usage. The separated parts are the reduced activation memory.
+
+![comparision](./pictures/bar.png)
+Fig 2: The comparision of the our method with gradient checkpointing and Mesa on the peak GPU memory usage.
 
 Up to now, we have applied these techniques to two activation layers (GELU, SiLU) and two normalization layers (LayerNorm, RMSNorm).
 The deduced low-memory counterparts are packed in the `lomem` torch-based package.
@@ -68,6 +71,19 @@ Therefore, they can be viewed as activation memory free layers.
 
 **Notice**:
 ``MSLayerNorm`` and ``MSRMSNorm`` contain no affine parameters. When loading pretrained weights into the model with ``MSLayerNorm`` or ``MSRMSNorm``, you should manually merge the affine parameters of ``LayerNorm`` or ``RMSNorm`` into the following linear layers and maybe change the computational process to keep the mathematical consistency.
+
+### Bool Packing
+
+Apart from the implementations of low-memory activaiton layers and normalization layers, `lomem` provides useful functions to pack a bool-type tensor into a uint8-type tensor and restore it.
+
+```python
+shape = (11, 45, 77)
+x = torch.rand(shape, device="cuda") > 0.5           # bool  (11, 45, 77)
+z = lomem.functional.pack_bool_to_uint8(x)           # uint8 (4765)
+y = lomem.functional.unpack_uint8_to_bool(z, shape)  # bool  (11, 45, 77)
+# print((x == y).all()) True
+```
+
 
 ## Citation
 
