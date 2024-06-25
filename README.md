@@ -1,6 +1,6 @@
 # LowMemoryBP
 
-This is the official repository of our paper *"Reducing Fine-Tuning Memory Overhead by Approximate and Memory-Sharing Backpropagation"*.
+This is the official repository of our paper *"Reducing Fine-Tuning Memory Overhead by Approximate and Memory-Sharing Backpropagation"*[[paper]](https://arxiv.org/abs/2406.16282).
 The Approx-BP and MS-BP techniques from our paper can **reduce a significant amount of GPU activation memory usage** during fine-tuning stage, **without slowing down the training throughput**.
 
 ![Activation_Memory](./pictures/bar.png)
@@ -24,6 +24,8 @@ To install:
 4. Compile from source `pip install -e .`
 
 ## Usage and Features
+
+`lomem` supports CUDA-device tensors with fp32, fp16 and bf16 dtype.
 
 Firstly, import `torch` and `lomem`:
 
@@ -66,3 +68,13 @@ Therefore, they can be viewed as activation memory free layers.
 
 **Notice**:
 ``MSLayerNorm`` and ``MSRMSNorm`` contain no affine parameters. When loading pretrained weights into the model with ``MSLayerNorm`` or ``MSRMSNorm``, you should manually merge the affine parameters of ``LayerNorm`` or ``RMSNorm`` into the following linear layers and maybe change the computational process to keep the mathematical consistency.
+
+## Citation
+
+```latex
+@inproceedings{yangreducing,
+  title={Reducing Fine-Tuning Memory Overhead by Approximate and Memory-Sharing Backpropagation},
+  author={Yang, Yuchen and Shi, Yingdong and Wang, Cheems and Zhen, Xiantong and Shi, Yuxuan and Xu, Jun},
+  booktitle={Forty-first International Conference on Machine Learning}
+}
+```
