@@ -59,10 +59,10 @@ Therefore, they produce much less activation memory ($\times8$ for 16bit-type) t
 To use **MS-LayerNorm** and **MS-RMSNorm**, you should replace `torch.nn.LayerNorm` and `RMSNorm` with `lomem.nn.MSLayerNorm` and `lomem.nn.MSRMSNorm`, for example:
 
 ```python
-# norm_layer_1 = torch.nn.LayerNorm(2048, eps=1e-8)
+# norm_layer_1 = torch.nn.LayerNorm(2048, eps=1e-8, elementwise_affine=False)
 norm_layer_1 = lomem.nn.MSLayerNorm(2048, eps=1e-8)
 
-# norm_layer_2 = RMSNorm(2048, eps=1e-8)
+# norm_layer_2 = RMSNorm(2048, eps=1e-8, elementwise_affine=False)
 norm_layer_2 = lomem.nn.MSRMSNorm(2048, eps=1e-8)
 ```
 

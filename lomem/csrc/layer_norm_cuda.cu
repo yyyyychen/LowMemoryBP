@@ -266,8 +266,8 @@ float * __restrict__ rstd_ptr, T * __restrict__ in_grad_ptr, const int sN)
                 #pragma unroll
                 for (int k {0}; k < vec_size; ++k) {
                     int sid = smem_head_id + k * smem_stride + gn_thr / vec_size;
-                    float out_grad_elem {smem_out_grad[k]};
-                    float output_elem {smem_output[k]};
+                    float out_grad_elem {smem_out_grad[sid]};
+                    float output_elem {smem_output[sid]};
                     in_grad_vec.elem[k] = out_grad_elem * rstd - mean1 - mean2 * output_elem;
                 }
                 *reinterpret_cast<vec_t*>(in_grad_ptr + gid) = in_grad_vec;
