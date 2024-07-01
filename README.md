@@ -69,7 +69,7 @@ norm_layer_2 = lomem.nn.MSRMSNorm(2048, eps=1e-8)
 MS-LayerNorm and MS-RMSNorm use the resigned formulas, storing the outputs into the activation memory and thereby sharing the activation memory with the following layers.
 Therefore, they can be viewed as activation memory free layers.
 
-**Notice**:
+**Note**:
 ``MSLayerNorm`` and ``MSRMSNorm`` contain no affine parameters. When loading pretrained weights into the model with ``MSLayerNorm`` or ``MSRMSNorm``, you should manually merge the affine parameters of ``LayerNorm`` or ``RMSNorm`` into the following linear layers and maybe change the computational process to keep the mathematical consistency.
 
 ### Bool Packing
