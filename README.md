@@ -70,7 +70,11 @@ MS-LayerNorm and MS-RMSNorm use the resigned formulas, storing the outputs into 
 Therefore, they can be viewed as activation memory free layers.
 
 **Note**:
-``MSLayerNorm`` and ``MSRMSNorm`` contain no affine parameters. When loading pretrained weights into the model with ``MSLayerNorm`` or ``MSRMSNorm``, you should manually merge the affine parameters of ``LayerNorm`` or ``RMSNorm`` into the following linear layers and maybe change the computational process to keep the mathematical consistency.
+
+1. ``MSLayerNorm`` and ``MSRMSNorm`` contain no affine parameters. When loading pretrained weights into the model with ``MSLayerNorm`` or ``MSRMSNorm``, you should manually merge the affine parameters of ``LayerNorm`` or ``RMSNorm`` into the following linear layers and maybe change the computational process to keep the mathematical consistency.
+
+2. For unknown reasons, `torch.nn.functional.linear` (thereby `torch.nn.Linear`) can not share activation memory with `MSLayerNorm` or `MSRMSNorm`.
+To address this problem, use our custom implementation to express linear operation (please refer to [this code](./experiments/vit_exp/model/partial.py)).
 
 ### Bool Packing
 
