@@ -1,0 +1,103 @@
+from yacs.config import CfgNode as CN
+
+
+_C = CN()
+
+
+_C.SYSTEM = CN()
+_C.SYSTEM.DEVICE = "cuda"
+
+
+_C.LOG = CN()
+_C.LOG.PRINT_FREQ = 10
+_C.LOG.OUTPUT_DIR = ""
+
+
+_C.DATA = CN()
+_C.DATA.SEED = 0
+_C.DATA.NAME = "cifar100"
+_C.DATA.PATH = "/home/ubuntu/yyc/data"
+_C.DATA.TRAIN_SPLIT = "train"
+_C.DATA.TEST_SPLIT = "test"
+_C.DATA.BATCH_SIZE_PER_GPU = 64
+_C.DATA.NUM_WORKERS = 8
+_C.DATA.PIN_MEMORY = True
+
+_C.DATA.TRANSFORM = CN()
+_C.DATA.TRANSFORM.IMG_SIZE = 224
+_C.DATA.TRANSFORM.EVAL_CROP_RATIO = 1.
+
+_C.DATA.TRANSFORM.MEAN = [0.485, 0.456, 0.406]
+_C.DATA.TRANSFORM.STD = [0.229, 0.224, 0.225]
+
+_C.DATA.TRANSFORM.REPEATED_AUG = False
+
+_C.DATA.TRANSFORM.AUGMENT = CN()
+_C.DATA.TRANSFORM.AUGMENT.MODULE = ""
+_C.DATA.TRANSFORM.AUGMENT.METHOD = ""
+_C.DATA.TRANSFORM.AUGMENT.ARGS = CN()
+
+_C.DATA.TRANSFORM.ERASE_PROB = 0.
+
+_C.DATA.TRANSFORM.MIXUP_ALPHA = 0.
+_C.DATA.TRANSFORM.MIXUP_PROB = 0.
+
+_C.DATA.TRANSFORM.CUTMIX_ALPHA = 0.
+_C.DATA.TRANSFORM.CUTMIX_PROB = 0.
+
+
+_C.TRAIN = CN()
+_C.TRAIN.RESUME_PATH = ""
+_C.TRAIN.EPOCHS = 50
+
+_C.TRAIN.DISTRIBUTED = True
+_C.TRAIN.AMP = True
+_C.TRAIN.GRAD_ACCUM = 1
+_C.TRAIN.DETERMINISTIC = False
+
+_C.TRAIN.CLIP_GRAD_NORM = None
+
+_C.TRAIN.TEST_ONLY = False
+
+
+_C.OPTIMIZER = CN()
+_C.OPTIMIZER.ARGS = CN()
+_C.OPTIMIZER.ARGS.opt = "adamW"
+_C.OPTIMIZER.ARGS.lr = 1e-3
+_C.OPTIMIZER.ARGS.weight_decay = 1e-3
+
+
+_C.LR_SCHEDULER = CN()
+_C.LR_SCHEDULER.ARGS = CN()
+_C.LR_SCHEDULER.ARGS.sched = "cosine"
+_C.LR_SCHEDULER.ARGS.warmup_lr = 1e-6
+_C.LR_SCHEDULER.ARGS.warmup_epochs = 0
+_C.LR_SCHEDULER.ARGS.warmup_prefix = True
+
+
+_C.MODEL = CN()
+_C.MODEL.BUILDER = CN()
+_C.MODEL.BUILDER.MODULE = "model.deit"
+_C.MODEL.BUILDER.METHOD = "deit_base_patch16_LS"
+_C.MODEL.BUILDER.ARGS = CN()
+_C.MODEL.CHECKPOINT = CN()
+_C.MODEL.CHECKPOINT.PATH = ""
+_C.MODEL.CHECKPOINT.FINETUNED_PATH = ""
+_C.MODEL.HEAD = CN()
+_C.MODEL.HEAD.RESET = True
+_C.MODEL.HEAD.MODULE = "torch.nn"
+_C.MODEL.HEAD.METHOD = "Linear"
+_C.MODEL.HEAD.ARGS = CN()
+_C.MODEL.HEAD.ARGS.in_features = 768
+
+
+_C.MODEL.SCHED = CN()
+_C.MODEL.SCHED.METHOD = ""
+_C.MODEL.SCHED.ARGS = CN()
+
+
+def get_cfg_defaults():
+  """Get a yacs CfgNode object with default values for my_project."""
+  # Return a clone so that the defaults will not be altered
+  # This is for the "local variable" use pattern
+  return _C.clone()

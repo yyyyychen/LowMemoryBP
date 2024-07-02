@@ -1,0 +1,74 @@
+      
+DATA:
+  BATCH_SIZE_PER_GPU: 32
+  NAME: cifar10
+  NUM_WORKERS: 8
+  PATH: ./datasets
+  PIN_MEMORY: true
+  SEED: 0
+  TRANSFORM:
+    AUGMENT:
+      ARGS: {}
+      METHOD: ''
+      MODULE: ''
+    EVAL_CROP_RATIO: 1.0
+    IMG_SIZE: 224
+    MEAN:
+    - 0.5
+    - 0.5
+    - 0.5
+    STD:
+    - 0.5
+    - 0.5
+    - 0.5
+LOG:
+  OUTPUT_DIR: ./results/cifar10/fulltuning_ViT_L_regelu2_msln
+  PRINT_FREQ: 10
+LR_SCHEDULER:
+  ARGS:
+    sched: cosine
+    warmup_epochs: 10
+    warmup_lr: 1.0e-06
+    warmup_prefix: true
+MODEL:
+  BUILDER:
+    ARGS:
+      full: true
+      act_layer: ReGELU2
+      norm_layer: MSLayerNorm
+    METHOD: vit_large_patch16_LS
+    MODULE: model.partial
+  CHECKPOINT:
+    PATH: ckpt/ViT-L_16.npz
+    REMOVE_HEAD: true
+  HEAD:
+    ARGS:
+      in_features: 1024
+    METHOD: Linear
+    MODULE: torch.nn
+    RESET: true
+  INIT:
+    ARGS: {}
+    METHOD: ''
+    MODULE: ''
+  SCHED:
+    ARGS: {}
+    METHOD: ''
+OPTIMIZER:
+  ARGS:
+    lr: 0.0001
+    opt: adamW
+    weight_decay: 0.1
+SYSTEM:
+  DEVICE: cuda
+TRAIN:
+  AMP: true
+  CLIP_GRAD_NORM: null
+  DETERMINISTIC: false
+  DISTRIBUTED: false
+  EPOCHS: 100
+  GRAD_ACCUM: 2
+  RESUME_PATH: ''
+  TEST_ONLY: false
+
+    

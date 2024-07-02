@@ -1,0 +1,72 @@
+      
+DATA:
+  BATCH_SIZE_PER_GPU: 64
+  NAME: cub200
+  NUM_WORKERS: 8
+  PATH: ./datasets/FGVC/CUB_200_2011
+  PIN_MEMORY: true
+  SEED: 0
+  TRANSFORM:
+    AUGMENT:
+      ARGS: {}
+      METHOD: ''
+      MODULE: ''
+    EVAL_CROP_RATIO: 1.0
+    IMG_SIZE: 224
+    MEAN:
+    - 0.5
+    - 0.5
+    - 0.5
+    STD:
+    - 0.5
+    - 0.5
+    - 0.5
+LOG:
+  OUTPUT_DIR: ./results/cub200/fulltuning_ViT_L_baseline
+  PRINT_FREQ: 10
+LR_SCHEDULER:
+  ARGS:
+    sched: cosine
+    warmup_epochs: 10
+    warmup_lr: 1.0e-06
+    warmup_prefix: true
+MODEL:
+  BUILDER:
+    ARGS:
+      full: true
+      act_layer: GELU
+      norm_layer: LayerNorm
+    METHOD: vit_large_patch16_LS
+    MODULE: model.partial
+  CHECKPOINT:
+    PATH: ckpt/ViT-L_16.npz
+    REMOVE_HEAD: true
+  HEAD:
+    ARGS:
+      in_features: 1024
+    METHOD: Linear
+    MODULE: torch.nn
+    RESET: true
+  INIT:
+    ARGS: {}
+    METHOD: ''
+    MODULE: ''
+  SCHED:
+    ARGS: {}
+    METHOD: ''
+OPTIMIZER:
+  ARGS:
+    lr: 0.0001
+    opt: adamW
+    weight_decay: 0.1
+SYSTEM:
+  DEVICE: cuda
+TRAIN:
+  AMP: true
+  CLIP_GRAD_NORM: null
+  DETERMINISTIC: false
+  DISTRIBUTED: false
+  EPOCHS: 100
+  GRAD_ACCUM: 1
+  RESUME_PATH: ''
+  TEST_ONLY: false

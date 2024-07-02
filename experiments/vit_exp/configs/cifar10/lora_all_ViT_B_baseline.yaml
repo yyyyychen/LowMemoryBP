@@ -1,0 +1,94 @@
+DATA:
+  BATCH_SIZE_PER_GPU: 64
+  NAME: cifar10
+  NUM_WORKERS: 8
+  PATH: ./datasets
+  PIN_MEMORY: true
+  SEED: 0
+  TEST_SPLIT: test
+  TRAIN_SPLIT: train
+  TRANSFORM:
+    AUGMENT:
+      ARGS: {}
+      METHOD: ''
+      MODULE: ''
+    CUTMIX_ALPHA: 0.0
+    CUTMIX_PROB: 0.0
+    ERASE_PROB: 0.0
+    EVAL_CROP_RATIO: 1.0
+    IMG_SIZE: 224
+    MEAN:
+    - 0.5
+    - 0.5
+    - 0.5
+    MIXUP_ALPHA: 0.0
+    MIXUP_PROB: 0.0
+    REPEATED_AUG: false
+    STD:
+    - 0.5
+    - 0.5
+    - 0.5
+LOG:
+  OUTPUT_DIR: ./results/cifar10/lora_all_ViT_B_baseline
+  PRINT_FREQ: 10
+LR_SCHEDULER:
+  ARGS:
+    sched: cosine
+    warmup_epochs: 10
+    warmup_lr: 1.0e-06
+    warmup_prefix: true
+MODEL:
+  BUILDER:
+    ARGS:
+      LORA:
+        ARGS:
+          fc_lora:
+          - true
+          - true
+          freeze_A: false
+          proj_lora: true
+          qkv_lora:
+          - true
+          - true
+          - true
+          rank: 4
+        ATTN_METHOD: LoraAttention
+        ATTN_MODULE: ''
+        MLP_METHOD: LoraMlp
+        MLP_MODULE: ''
+      act_layer: GELU
+      norm_layer: LayerNorm
+    METHOD: vit_base_patch16_LS
+    MODULE: model.lora
+  CHECKPOINT:
+    FINETUNED_PATH: ''
+    PATH: ckpt/ViT-B_16.npz
+    REMOVE_HEAD: true
+  HEAD:
+    ARGS:
+      in_features: 768
+    METHOD: Linear
+    MODULE: torch.nn
+    RESET: true
+  INIT:
+    ARGS: {}
+    METHOD: ''
+    MODULE: ''
+  SCHED:
+    ARGS: {}
+    METHOD: ''
+OPTIMIZER:
+  ARGS:
+    lr: 0.01
+    opt: adamW
+    weight_decay: 0.1
+SYSTEM:
+  DEVICE: cuda
+TRAIN:
+  AMP: true
+  CLIP_GRAD_NORM: null
+  DETERMINISTIC: false
+  DISTRIBUTED: false
+  EPOCHS: 100
+  RESUME_PATH: ''
+  TEST_ONLY: false
