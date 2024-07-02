@@ -88,6 +88,14 @@ y = lomem.functional.unpack_uint8_to_bool(z, shape)  # bool  (11, 45, 77)
 # print((x == y).all()) True
 ```
 
+### Experiments
+
+Please see our [experiments](./experiments) subdirectory, which contains:
+
+1. [ViT experiments](./experiments/vit_exp)
+2. LLaMA experiments (Coming soon!)
+3. RoBERTa experiments (Coming soon!)
+
 
 ## Citation
 
