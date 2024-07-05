@@ -52,7 +52,7 @@ act_layer_2 = lomem.nn.ReSiLU2()
 ReGELU2 and ReSiLU2 have the approximate derivatives, so that they only store 2-bit-type activation momery.
 The searching programs for ReGELU2 and ReSiLU2 are put in the [subdirectory](./search_act).
 This technique can be viewed as 2-bit functional quantization of the derivative function, while remains the original function.
-Therefore, they produce much less activation memory ($\times8$ for 16bit-type) than GELU and SiLU.
+Therefore, they produce much less activation memory ($\times$8 for 16bit-type) than GELU and SiLU.
 
 ### Nomalization Layers
 
