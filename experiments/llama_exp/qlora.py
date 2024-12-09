@@ -632,7 +632,7 @@ def make_data_module(tokenizer: transformers.PreTrainedTokenizer, args) -> Dict:
     def load_data(dataset_name):
         if dataset_name == 'alpaca':
             return load_dataset("tatsu-lab/alpaca")
-            # If you cannot download dataset using huggingface/load_dataset, try to download locally.
+            # If you cannot download dataset using huggingface/load_dataset, try to download alpaca dataset and load locally.
             # return load_dataset("parquet", data_files=os.path.join(args.dataset_path, "alpaca/data/train-00000-of-00001-a09b74b3ef9c3b56.parquet"))
         else:
             if os.path.exists(dataset_name):
