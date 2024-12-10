@@ -1,0 +1,51 @@
+export DATAPATH="./datasets"
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python qlora.py \
+  --using_method activation_and_mergeln \
+  --model_name_or_path ./ckpt/huggyllama-llama-7b-mergeln \
+  --model_type llama \
+  --eval_dataset_size 1024 \
+  --max_eval_samples 1000 \
+  --source_max_len 512 \
+  --target_max_len 128 \
+  --dataset alpaca \
+  --dataset_path ${DATAPATH} \
+  --output_dir ./output/7b/alpaca/mergeln \
+  --logging_steps 10 \
+  --save_strategy steps \
+  --save_steps 50 \
+  --save_total_limit 1 \
+  --evaluation_strategy steps \
+  --eval_steps 10000 \
+  --per_device_eval_batch_size 8 \
+  --max_new_tokens 32 \
+  --dataloader_num_workers 3 \
+  --group_by_length \
+  --logging_strategy steps \
+  --remove_unused_columns false \
+  --do_train True \
+  --do_eval \
+  --do_mmlu_eval \
+  --skip_memory_metrics false \
+  --lora_r 64 \
+  --lora_alpha 16 \
+  --lora_dropout 0.1 \
+  --lora_modules all \
+  --double_quant \
+  --quant_type nf4 \
+  --bf16 \
+  --bits 4 \
+  --warmup_ratio 0.03 \
+  --lr_scheduler_type constant \
+  --gradient_checkpointing false \
+  --per_device_train_batch_size 4 \
+  --gradient_accumulation_steps 4 \
+  --max_steps 10000 \
+  --learning_rate 0.0001 \
+  --adam_beta2 0.999 \
+  --max_grad_norm 0.3 \
+  --weight_decay 0.0 \
+  --disable_tqdm True \
+  --data_seed 0 \
+  --seed 1 \
+  --max_new_tokens 256
