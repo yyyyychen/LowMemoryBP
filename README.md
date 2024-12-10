@@ -93,8 +93,8 @@ y = lomem.functional.unpack_uint8_to_bool(z, shape)  # bool  (11, 45, 77)
 Please see our [experiments](./experiments) subdirectory, which contains:
 
 1. [ViT experiments](./experiments/vit_exp)
-2. LLaMA experiments (./experiments/llama_exp)
-3. RoBERTa experiments (./experiments/roberta_exp)
+2. [LLaMA experiments](./experiments/llama_exp)
+3. [RoBERTa experiments](./experiments/roberta_exp)
 
 
 ## Citation
