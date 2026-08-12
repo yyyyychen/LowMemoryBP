@@ -1,3 +1,5 @@
+
+
 # LowMemoryBP
 
 This is the official repository of our paper *"Reducing Fine-Tuning Memory Overhead by Approximate and Memory-Sharing Backpropagation"*[[paper]](https://arxiv.org/abs/2406.16282).
@@ -16,7 +18,7 @@ The deduced low-memory counterparts are packed in the `lomem` torch-based packag
 
 As `lomem` is developped based on pytorch and CUDA, you should prepare a python3 environment with a CUDA-available pytorch installed.
 And you should install a CUDA with the same version as that used to compile pytorch.
-You can chack the version of pytorch by `pip show torch` and the version of CUDA by `nvcc -V`.
+You can check the version of pytorch by `pip show torch` and the version of CUDA by `nvcc -V`.
 
 In our test, we use `torch_2.3.1+cu118` and `cuda_11.8` in the Ubuntu 20.04.6 LTS system with gcc version 9.4.0.
 
